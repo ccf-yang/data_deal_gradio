@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Comparison Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Log Comparison Tool</h2>
+        <textarea id="logInput" placeholder="请粘贴日志内容..."></textarea>
+        <button onclick="processLog()">分析日志</button>
+        
+        <div class="result-container">
+            <div id="tableResult"></div>
+            <div id="chartContainer" class="chart-container"></div>
+        </div>
+        <div id="debugLog" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; font-family: monospace; white-space: pre-wrap;"></div>
+    </div>
+
+    <script>
+        // 添加调试日志函数
+        function log(message, data = null) {
+            // 只输出到控制台，不再显示到页面
+            console.log(message, data);
+        }
+
+        function processLog() {
+            // 清除之前的日志
+            document.getElementById('debugLog').innerHTML = '';
+            
+            const logText = document.getElementById('logInput').value;
+            log('获取到的输入日志:', logText);
+
+            const lines = logText.trim().split('\n');
+            log(`日志行数: ${lines.length}`);
+            
+            // 解析第一行获取基本信息
+            const firstLine = lines[0].split(' ');
+            log('第一行解析结果:', firstLine);
+            
+            const containerName = firstLine[0];  // 修改：获取正确的容器名
+            log('容器名称:', containerName);
+            
+            // 解析自己工具的采集数据
+            let selfData = {};
+            let i = 1;
+            log('开始解析自采集数据...');
+            
+            while (i < lines.length && !lines[i].includes('监控已经运行1h')) {
+                if (lines[i].startsWith('Waiting')) {
+                    log(`跳过等待行: ${lines[i]}`);
+                    i++;
+                    continue;
+                }
+                // 匹配时间和流量数据
+                const match = lines[i].match(/\[.*? - (.*?)\] Traffic \(bits\/5min\): (\d+)/);
+                if (match) {
+                    log("match:", match);
+                    const timestamp = match[1];  // 获取起始时间
+                    const value = parseInt(match[2]);  // 获取流量值
+                    log(`匹配到数据行: ${lines[i]}`);
+                    log(`提取的时间戳: ${timestamp}, 流量值: ${value}`);
+                    
+                    // 提取小时和分钟
+                    const timeMatch = timestamp.match(/\d{2}:(\d{2}):\d{2}$/);
+                    if (timeMatch) {
+                        const minutes = timeMatch[1];
+                        selfData[`${minutes}分钟`] = value;
+                        log(`处理后的时间点: ${minutes}分钟, 值: ${value}`);
+                    } else {
+                        log('时间格式匹配失败:', timestamp);
+                    }
+                } else {
+                    log(`无法匹配的行: ${lines[i]}`);
+                }
+                i++;
+            }
+            
+
+            log('处理后的自采集数据:', selfData);
+            const firstKey = Object.keys(selfData)[0];
+            const firstTime = parseInt(firstKey);
+            selfData = Object.entries(selfData).reduce((acc, [key, value]) => {
+                const currentTime = parseInt(key);
+                if (currentTime >= firstTime) {
+                    acc[key] = value;
+                } else {
+                    log(`移除时间小于首个时间的数据: ${key}`);
+                }
+                return acc;
+            }, {});
+            log('优化后的自采集数据:', selfData);
+
+            // 跳过中间行，找到工具采集的数据
+            log('查找工具采集数据...');
+
+            log(`Need to find containerName: ${containerName.replace(/^['"]|['"]$/g, '')}`);
+            let k=1;
+            // 解析工具采集的数据
+            let toolData = {};
+            let macAddress = ''; // 将 macAddress 移到外部
+            // 修改正则表达式以匹配容器名称及后面的加号
+            const containerPattern = new RegExp(containerName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '\\+');
+            while (k < lines.length && !containerPattern.test(lines[k])) {
+                log(`跳过行: ${lines[k]}`);
+                k++;
+            }
+            if (k < lines.length) {
+                log(`找到工具数据行: ${lines[k]}`);
+                const toolLine = lines[k].split('+');
+                macAddress = toolLine[1];  // 更新 macAddress
+                const metrics = toolLine[2].split(',');
+                log('工具数据解析:', { macAddress, metricsCount: metrics.length });
+                
+                metrics.forEach((metric, index) => {
+                    const minute = (index * 5).toString().padStart(2, '0');
+                    toolData[`${minute}分钟`] = parseFloat(metric);
+                    log(`工具数据时间点: ${minute}分钟, 值: ${metric}`);
+                });
+
+                log('工具采集数据解析结果:', toolData);
+            } else {
+                log('未找到匹配的工具数据行');
+                return; // 如果没找到工具数据，直接返回
+            }
+
+            // 生成比较表格
+            let tableHtml = `<h3>${containerName} (${macAddress})</h3>
+                            <table>
+                                <tr>
+                                    <th>时间点</th>
+                                    <th>自采集数据</th>
+                                    <th>工具采集数据</th>
+                                    <th>差异</th>
+                                </tr>`;
+
+            // 准备图表数据
+            let chartData = {
+                times: [],
+                selfValues: [],
+                toolValues: []
+            };
+
+            // 使用工具数据的时间点作为基准
+            log('开始生成表格数据，工具数据时间点数量:', Object.keys(toolData).length);
+            Object.keys(toolData).sort().forEach(timePoint => {
+                const toolValue = toolData[timePoint];
+                const selfValue = selfData[timePoint] || 0;
+                const diff = Math.abs(selfValue - toolValue);
+                log(`处理时间点: ${timePoint}`);
+                log(`- 工具数据: ${toolValue}`);
+                log(`- 自采集数据: ${selfValue}`);
+                log(`- 差异: ${diff}`);
+                
+                tableHtml += `<tr>
+                                <td>${timePoint}</td>
+                                <td>${selfValue.toLocaleString()}</td>
+                                <td>${toolValue.toLocaleString()}</td>
+                                <td>${diff.toLocaleString()}</td>
+                            </tr>`;
+
+                chartData.times.push(timePoint);
+                chartData.selfValues.push(selfValue);
+                chartData.toolValues.push(toolValue);
+            });
+
+            log('表格HTML生成完成，长度:', tableHtml.length);
+            tableHtml += '</table>';
+            log('生成表格HTML完成');
+            
+            document.getElementById('tableResult').innerHTML = tableHtml;
+            log('更新表格DOM完成');
+
+            // 绘制图表
+            try {
+                drawChart(chartData);
+                log('图表绘制完成');
+            } catch (error) {
+                log('图表绘制错误:', error);
+            }
+        } 
+        
+
+        function drawChart(data) {
+            const chart = echarts.init(document.getElementById('chartContainer'));
+            const option = {
+                title: {
+                    text: '数据对比图'
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['自采集数据', '工具采集数据']
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.times
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        name: '自采集数据',
+                        type: 'line',
+                        data: data.selfValues
+                    },
+                    {
+                        name: '工具采集数据',
+                        type: 'line',
+                        data: data.toolValues
+                    }
+                ]
+            };
+            chart.setOption(option);
+        }
+    </script>
+</body>
+</html>
