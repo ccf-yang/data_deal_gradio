@@ -162,31 +162,52 @@ print(f"文档覆盖率: {stats['coverage']['description_coverage']}%")
 
 MIT License
 
+## 🔧 Git 配置说明
 
-更新了 .gitignore 文件，添加了以下类别的忽略项：
+### .gitignore 配置
+项目的 .gitignore 文件包含以下主要类别：
 
-Python 相关：
-字节码文件 (__pycache__/, *.pyc)
-虚拟环境 (venv/, .env)
-构建文件 (build/, dist/)
-包文件 (*.egg-info/)
-Node.js 相关：
-node_modules/
-npm 和 yarn 日志文件
-调试日志
-数据库文件：
-SQLite 文件 (*.sqlite, *.db)
-IDE 和编辑器：
-VS Code (.vscode/)
-PyCharm (.idea/)
-Sublime Text 配置
-vim 临时文件
-缓存和日志：
-日志文件 (*.log)
-缓存目录 (.cache/)
-Redis 缓存
-项目特定：
-数据库迁移版本
-上传文件目录
-实例配置
-转换结果文件
+1. **Python 相关**
+   - `__pycache__/`, `*.pyc` (字节码文件)
+   - `venv/`, `.env` (虚拟环境)
+   - `build/`, `dist/` (构建文件)
+   - `*.egg-info/` (包文件)
+
+2. **Node.js 相关**
+   - `node_modules/` (包括 import_api 下的 node_modules)
+   - npm 和 yarn 日志文件
+   - 调试日志
+
+3. **数据库文件**
+   - `*.sqlite`, `*.db` (SQLite 文件)
+
+4. **IDE 和编辑器**
+   - `.vscode/` (VS Code)
+   - `.idea/` (PyCharm)
+   - Sublime Text 配置
+   - vim 临时文件
+
+5. **项目特定**
+   - `web_api/migrations/versions/`
+   - `web_api/instance/`
+   - `web_api/uploads/`
+   - `web_api/import_api/node_modules/`
+
+### 使 .gitignore 生效
+如果你修改了 .gitignore 文件，但有些文件已经被提交到仓库中，按以下步骤使新规则生效：
+
+```bash
+# 1. 清除 Git 缓存
+git rm -r --cached .
+
+# 2. 重新添加所有文件（会应用新的 .gitignore 规则）
+git add .
+
+# 3. 提交更改
+git commit -m "Update .gitignore and remove ignored files from repository"
+
+# 4. 推送到远程仓库
+git push
+```
+
+> **注意**: 这个操作会从 Git 仓库中移除被忽略的文件，但不会删除本地文件。
