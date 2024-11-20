@@ -82,11 +82,12 @@ def process_text(input_text, ai_instance):
         return "", f"An error occurred: {str(e)}"
 
 def clear_text():
-    return "", "", ""
+    return "", "", "", "", ""
 
-def save_text(input_text, output_text, system_message):
-    if not input_text or not output_text or not system_message:
-        return "Error: Input text, output text, and system message must not be empty"
+def save_text(input_text, output_text, output_text2, system_message):
+    if not output_text2:
+        if not input_text or not output_text  or not system_message:
+            return "Error: Input text, output text, and system message must not be empty"
     try:
         filename = "dataset.json"
         data = {
@@ -102,7 +103,24 @@ def save_text(input_text, output_text, system_message):
             existing_data = []
         
         # Append new data and write back to file
-        existing_data.append(data)
+        if output_text2:
+            output_text2 = output_text2.strip()
+            if output_text2.startswith("```json"):
+                output_text2 = output_text2[7:]
+            if output_text2.endswith("```"):
+                output_text2 = output_text2[:-3]
+            try:
+                o2_res = json.loads(output_text2)
+                if isinstance(o2_res, list):
+                    existing_data.extend(o2_res)
+                elif isinstance(o2_res, dict):
+                    existing_data.append(o2_res)
+                else:
+                    return "Error: Invalid output_text2 format"
+            except json.JSONDecodeError:
+                return "Error: Invalid output_text2 format"
+        else:
+            existing_data.append(data)
         with open(filename, "w") as file:
             json.dump(existing_data, file, ensure_ascii=False, indent=2)
         
@@ -114,6 +132,41 @@ def process_wrapper(input_text, platform, api_key, system_prompt, model):
     if not input_text:
         return "", "Error: Input text is empty"
     try:
+        ai_instance = get_ai_instance(platform, api_key, system_prompt, model)
+        output, error = process_text(input_text, ai_instance)
+        return output, error
+    except Exception as e:
+        return "", f"Error: {str(e)}"
+        
+def process_wrapper2(input_text, platform, api_key, model):
+    if not input_text:
+        return "", "Error: Input text is empty"
+    try:
+        system_prompt = '''你是一个专业的问答生成助手。我会给你一段文字，这段文字包含了一些重要信息。请你仔细阅读这段文字，从中提取出关键信息，然后生成相应的问题。
+你需要按照以下JSON格式输出问题和答案：
+{
+    "instruction": "根据以下内容回答问题",
+    "input": "[在这里提出问题]",
+    "output": "[对应的答案]"
+}
+要求：
+1. 问题要简洁明确，直击重点
+2. 答案要完整准确，直接从原文提取
+3. 每个问答对应一个完整的JSON结构
+4. 确保生成的问题是有意义的，答案是有价值的
+5. 避免生成过于简单或过于复杂的问题
+6. 保持JSON格式的规范性和一致性
+7. 如果问题很多，请多返回一些问答，不要只返回一个，返回结果放到数组里就好了
+例如，如果给你以下文字：
+"苹果公司成立于1976年4月1日，由史蒂夫·乔布斯、史蒂夫·沃兹尼亚克和罗纳德·韦恩共同创立。"
+你应该输出：
+{
+    "instruction": "根据以下内容回答问题",
+    "input": "苹果公司是在什么时候成立的，创始人是谁？",
+    "output": "苹果公司成立于1976年4月1日，由史蒂夫·乔布斯、史蒂夫·沃兹尼亚克和罗纳德·韦恩共同创立。"
+}
+请确保你理解了这个任务，并准备好处理我接下来给你的文本。
+        '''
         ai_instance = get_ai_instance(platform, api_key, system_prompt, model)
         output, error = process_text(input_text, ai_instance)
         return output, error
@@ -145,11 +198,17 @@ with gr.Blocks() as demo:
             value="You are a Python code assistant. Your task is to analyze pytest.mark.parametrize decorators and their associated docstrings. Based on the docstring description, fill in appropriate parameter values that match the documentation. Only provide the completed pytest.mark.parametrize decorator with filled parameters. Do not include any explanations or additional text in your response."
         )
 
-    input_text = gr.Textbox(label="输入文本", lines=5)
-    output_text = gr.Textbox(label="处理后的文本", lines=5)
+    with gr.Accordion("自动化参数补充"):
+        input_text = gr.Textbox(label="输入原始参数(问题)", lines=5)
+        output_text = gr.Textbox(label="输出处理后的参数(答案)", lines=5)
+
+    with gr.Accordion("自动处理成问答"):
+        input_text2 = gr.Textbox(label="输入一段有答案的文本", lines=5)
+        output_text2 = gr.Textbox(label="处理后的数据json", lines=5)
 
     with gr.Row():
-        process_btn = gr.Button("处理")
+        process_btn = gr.Button("处理参数")
+        process_btn2 = gr.Button("生成数据")
         clear_btn = gr.Button("清除")
         save_btn = gr.Button("保存")
 
@@ -164,16 +223,25 @@ with gr.Blocks() as demo:
         queue=False                                                      # 禁用队列，使请求立即处理，不需要等待之前的请求完成
     )
     
+    process_btn2.click(
+        fn=process_wrapper2,                                              
+        inputs=[input_text2, platform, api_key, model],    
+        outputs=[output_text2, error_text],                               
+        api_name="process2",                                              
+        queue=False                                                     
+    )
+    
+    
     clear_btn.click(
         fn=clear_text,
         inputs=None,
-        outputs=[input_text, output_text, error_text],
+        outputs=[input_text, output_text, error_text, output_text2, input_text2],
         queue=False
     )
     
     save_btn.click(
         fn=save_text,
-        inputs=[input_text, output_text, system_prompt],
+        inputs=[input_text, output_text, output_text2, system_prompt],
         outputs=status_msg,
         queue=False
     )

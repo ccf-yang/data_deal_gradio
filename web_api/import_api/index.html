@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swagger Import Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .upload-section:hover {
+            border-color: #666;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Swagger Import Tool</h1>
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept=".json,.yaml,.yml" style="display: none">
+            <button class="button" onclick="document.getElementById('fileInput').click()">选择Swagger文件</button>
+            <p>支持 .json, .yaml, .yml 格式的文件</p>
+        </div>
+        <div id="loading" class="loading">正在转换中...</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const content = e.target.result;
+                    let jsonContent;
+                    
+                    // 尝试解析文件内容
+                    try {
+                        if (file.name.endsWith('.json')) {
+                            jsonContent = JSON.parse(content);
+                        } else if (file.name.endsWith('.yaml') || file.name.endsWith('.yml')) {
+                            jsonContent = jsyaml.load(content);
+                        } else {
+                            throw new Error('不支持的文件格式，请使用.json或.yaml文件');
+                        }
+                    } catch (error) {
+                        throw new Error('文件解析失败：' + error.message);
+                    }
+
+                    console.log('Converting swagger:', jsonContent);
+                    
+                    // 显示加载提示
+                    document.getElementById('loading').style.display = 'block';
+                    
+                    // 发送到后端进行转换
+                    const response = await fetch('http://localhost:3000/convert', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(jsonContent)
+                    });
+
+                    // 隐藏加载提示
+                    document.getElementById('loading').style.display = 'none';
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || '转换失败');
+                    }
+
+                    const result = await response.json();
+                    console.log('Conversion result:', result);
+                    
+                    if (result.status === 'error') {
+                        throw new Error(result.message || '转换失败');
+                    }
+                    
+                    displaySuccess('转换成功！');
+                    displayResult(result.data);
+                } catch (error) {
+                    console.error('Error:', error);
+                    displayError(error.message);
+                    // 隐藏加载提示
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h2>转换结果：</h2>';
+            resultDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function displayError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="error">错误：' + message + '</div>';
+            console.error('Error displayed:', message);
+        }
+
+        function displaySuccess(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="success">' + message + '</div>';
+        }
+    </script>
+</body>
+</html>
