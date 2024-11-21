@@ -1,0 +1,179 @@
+:root {
+  --document-view-width: 300px;  /* You can change this value to adjust the width */
+}
+
+.document-view {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  width: var(--document-view-width);
+}
+
+.document-section {
+  margin-bottom: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+  width: 100%;
+}
+
+.document-header {
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  border-radius: 4px;
+}
+
+.document-header:hover {
+  background-color: #eeeeee;
+}
+
+.document-header h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.document-header .folder-icon {
+  color: #666;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.document-header.collapsed .folder-icon {
+  transform: rotate(-90deg);
+}
+
+.api-list {
+  padding: 4px;
+  max-height: 800px;
+  overflow: hidden;
+  transition: max-height 0.2s ease-in-out;
+}
+
+.api-list.collapsed {
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.api-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background-color: #fafafa;
+  border: 1px solid #eee;
+  transition: all 0.2s ease;
+}
+
+.api-item:hover {
+  background-color: #f0f0f0;
+  border-color: #ddd;
+}
+
+.api-item.selected {
+  background-color: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.method {
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.method.get {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.method.post {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.method.put {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.method.delete {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.method.patch {
+  background-color: #e0f2f1;
+  color: #00796b;
+}
+
+.path {
+  font-family: monospace;
+  color: #444;
+  font-size: 13px;
+  flex: 1;
+  word-break: break-all; /* Allow breaking at any character */
+  min-width: 200px; /* Ensure path takes most of the width */
+  line-height: 1.4;
+}
+
+.api-count {
+  font-size: 12px;
+  color: #666;
+  margin-left: auto;
+}
+
+.documents-list {
+  padding: 16px;
+}
+
+.document-item {
+  margin-bottom: 8px;
+}
+
+.doc-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.doc-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.no-documents {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.empty-document {
+  padding: 12px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  background-color: #f8f8f8;
+  border-radius: 0 0 4px 4px;
+  font-size: 0.9em;
+}

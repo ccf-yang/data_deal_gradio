@@ -89,7 +89,8 @@ app.get('/api/saved-apis', async (req, res) => {
       console.log('No saved APIs found');
     }
     
-    res.json(Object.values(savedApis).flat());
+    // Return the raw api.json content, keeping directory structure
+    res.json(savedApis);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch saved APIs' });
   }

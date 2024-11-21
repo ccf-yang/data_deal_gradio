@@ -1,0 +1,68 @@
+.api-list-container {
+  padding: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.api-list-item {
+  display: flex;
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #ffffff;
+}
+
+.api-list-item:hover {
+  border-color: #1976d2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.api-list-item.selected {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.api-method-path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.api-method {
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.api-path {
+  font-family: monospace;
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.api-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  margin-left: 58px;
+}
+
+.no-apis {
+  text-align: center;
+  color: #666;
+  padding: 32px;
+  font-size: 0.95em;
+}

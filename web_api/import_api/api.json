@@ -276,8 +276,1893 @@
       "tags": [
         "基本 API"
       ]
+    },
+    {
+      "path": "/v3/remove-watermark",
+      "method": "POST",
+      "summary": "去除水印",
+      "description": "自动去除图像中的水印。您可以在此处获取指导：https://novita.ai/get-started/UseCase_ImageEnhancement.html#_16-remove-watermark\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_file": {
+                  "type": "string",
+                  "description": "原图base64，最大分辨率1024*1024，最大文件大小30Mb。"
+                },
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "response_image_type": {
+                      "type": "string"
+                    },
+                    "enterprise_plan": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "当设置为 true 时， enterprise_plan 将启动。"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "image_file",
+                "extra"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image_file": {
+                    "type": "string"
+                  },
+                  "image_type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "image_file",
+                  "image_type"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "reason",
+                  "message"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
+    },
+    {
+      "path": "/v3/img2mask",
+      "method": "POST",
+      "summary": " 要遮罩的图像 ",
+      "description": "图像到蒙版功能的主要目的是将图像转换为相应的蒙版。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_file": {
+                  "type": "string",
+                  "description": "原图base64，最大分辨率2048*2048，最大文件大小30Mb。"
+                },
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "enterprise_plan": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "当设置为 true 时， enterprise_plan 将启动。"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "image_file",
+                "extra"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "image_file": {
+                        "type": "string"
+                      },
+                      "image_type": {
+                        "type": "string"
+                      },
+                      "bbox": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer"
+                        }
+                      },
+                      "area": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "image_file",
+                      "image_type",
+                      "bbox",
+                      "area"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "reason",
+                  "message"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
+    },
+    {
+      "path": "/v2/config",
+      "method": "GET",
+      "summary": "查询s3配置",
+      "description": "该端点用于查询当前配置的S3 Bucket。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string",
+                        "description": "AWS 区域"
+                      },
+                      "bucket": {
+                        "type": "string",
+                        "description": "AWS存储桶"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "region",
+                      "bucket",
+                      "path"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ]
+    },
+    {
+      "path": "/v3/img2prompt",
+      "method": "POST",
+      "summary": "图片提示",
+      "description": "该API有助于从图像中获取提示。您可以在此处获取指导：https://novita.ai/get-started/UseCase_ImageEnhancement.html#_16-remove-watermark。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_file": {
+                  "type": "string",
+                  "description": "原图base64，最大分辨率2048*2048，最大文件大小30Mb。"
+                },
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "enterprise_plan": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "当设置为 true 时， enterprise_plan 将启动。"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "image_file",
+                "extra"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "prompt"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "reason",
+                  "message"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
+    },
+    {
+      "path": "/v2/progress",
+      "method": "GET",
+      "summary": "进步",
+      "description": "该接口提供图像生成结果的查询，可以是正在进行中、失败或成功。如果成功，它将返回生成图像的 s3 URL。\n\n",
+      "parameters": [
+        {
+          "name": "task_id",
+          "in": "query",
+          "description": "任务ID\n\n",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "CodeNormal=0 CodeInternalError=-1 CodeInvalidJSON=1 CodeModelNotExist=2 CodeTaskIdNotExist=3 CodeInvalidAuth=4 CodeHostUnavailable=5 CodeParamRangeOutOfLimit=6 CodeCostBalanceFailure=7 CodeSamplerNotExist=8 CodeTimeout=9 CodeNotSupport=10"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "integer",
+                        "description": "生成状态： - 0 = 正在初始化 - 1 = 正在进行 - 2 = 成功 - 3 = 失败 - 4 = 超时。"
+                      },
+                      "progress": {
+                        "type": "integer",
+                        "description": "生成图像的进度，取值范围为[0, 1]。"
+                      },
+                      "eta_relative": {
+                        "type": "integer",
+                        "description": "估计剩余时间（以秒为单位）。"
+                      },
+                      "imgs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "生成图像的S3地址。"
+                      },
+                      "failed_reason": {
+                        "type": "string",
+                        "description": "如果 status = 3 或 4，则返回失败原因。"
+                      },
+                      "current_images": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "与稳定扩散类似，也会返回图像生成过程中的预览图像。为了方便开发者，目前预览图是按照batch_size来划分的。"
+                      },
+                      "submit_time": {
+                        "type": "string",
+                        "description": "任务提交时间。"
+                      },
+                      "execution_time": {
+                        "type": "string",
+                        "description": "开始任务执行时间。"
+                      },
+                      "txt2img_time": {
+                        "type": "string",
+                        "description": "由稳定扩散时间生成的图像。"
+                      },
+                      "finish_time": {
+                        "type": "string",
+                        "description": "图片上传至存储时间。"
+                      },
+                      "info": {
+                        "type": "string",
+                        "description": "Stable Diffusion 的 info 信息以 JSON 字符串形式返回。"
+                      },
+                      "enable_nsfw_detection": {
+                        "type": "boolean",
+                        "description": "是否启用 nsfw 检测。"
+                      },
+                      "nsfw_detection_result": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "valid": {
+                              "type": "boolean",
+                              "description": "nsfw检测是否生效。"
+                            },
+                            "confidence": {
+                              "type": "number",
+                              "description": "置信值接近 100 表示图像包含 NSFW 内容的概率较高。"
+                            }
+                          },
+                          "required": [
+                            "valid",
+                            "confidence"
+                          ]
+                        }
+                      },
+                      "debug_info": {
+                        "type": "object",
+                        "properties": {
+                          "submit_time_ms": {
+                            "type": "integer"
+                          },
+                          "execution_time_ms": {
+                            "type": "integer"
+                          },
+                          "txt2img_time_ms": {
+                            "type": "integer"
+                          },
+                          "finish_time_ms": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "enable_nsfw_detection"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "基本 API"
+      ]
+    },
+    {
+      "path": "/v3/async/make-photo",
+      "method": "POST",
+      "summary": "制作照片",
+      "description": "通过 Stacked ID Embedding 定制逼真的人物照片，对于异步图像生成，只会返回一个 task_id。您应该使用 task_id 调用 /v3/async-batch/task-result API 端点以检索图像生成结果。您可以在此处获取指导：https://novita.ai/get-started/UseCase_ImageEnhancement.html#_18-make-photo。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "response_image_type": {
+                      "type": "string",
+                      "description": "图像类型"
+                    }
+                  },
+                  "required": [
+                    "response_image_type"
+                  ],
+                  "description": "额外信息。"
+                },
+                "model_name": {
+                  "type": "string",
+                  "description": "基于 SDXL 的模型的名称，您可以使用参数 filter.types=checkpoint 调用 /v3/model 端点来检索 sd_name_in_api 字段作为 model_name。"
+                },
+                "image_assets_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "图像的资产 ID"
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "肯定提示词，用“，”分隔。"
+                },
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "否定提示词，用“,”分隔"
+                },
+                "loras": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model_name": {
+                        "type": "string",
+                        "description": "基于SDXL的lora的名称，您可以调用/v3/models端点来检索sd_name字段作为model_name，记住不要包含“.safetensors”"
+                      },
+                      "strength": {
+                        "type": "number",
+                        "description": "洛拉的力量值。值越大，效果越偏向lora。"
+                      }
+                    }
+                  },
+                  "description": "Lora选项，目前最多支持5个Lora"
+                },
+                "strength": {
+                  "type": "number",
+                  "description": "它添加的噪声量是受控制的，值越大，与原始图像的差异越大。"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "图像的宽度。"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "图像的高度。"
+                },
+                "image_num": {
+                  "type": "integer",
+                  "description": "一代人生成的图像数量。"
+                },
+                "steps": {
+                  "type": "integer",
+                  "description": "将步骤视为图像创建过程的迭代。"
+                },
+                "seed": {
+                  "type": "integer",
+                  "description": "种子是稳定扩散产生噪声的数字。"
+                },
+                "guidance_scale": {
+                  "type": "number",
+                  "description": "此设置表示稳定扩散将听取您的提示的程度。"
+                },
+                "sampler_name": {
+                  "type": "string",
+                  "description": "这个去噪过程称为采样，因为稳定扩散在每个步骤中都会生成一个新的样本图像。"
+                }
+              },
+              "required": [
+                "extra",
+                "model_name",
+                "image_assets_ids",
+                "prompt",
+                "negative_prompt",
+                "loras",
+                "strength",
+                "width",
+                "height",
+                "image_num",
+                "steps",
+                "seed",
+                "guidance_scale",
+                "sampler_name"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "task_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "task_id"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
     }
   ],
-  "test2": [],
-  "fsd": []
+  "test2": [
+    {
+      "path": "/v2/config",
+      "method": "DELETE",
+      "summary": "删除 s3 配置",
+      "description": "此端点有助于重置用户配置的 S3 Bucket 配置。调用成功后，默认会暂时存储在novita.ai中。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ]
+    },
+    {
+      "path": "/v2/model/civitai_version_id/{civitai_version_id}",
+      "method": "GET",
+      "summary": "查询 civitai 模型",
+      "description": "通过 civitai 版本 ID 获取模型信息，如果 enable = 1，则该模型可以通过 /v2/txt2img 和 /v2/img2img 使用。\n\n",
+      "parameters": [
+        {
+          "name": "civitai_version_id",
+          "in": "path",
+          "description": "civitai 版本 ID\n\n",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "null"
+                          },
+                          "model_id": {
+                            "type": "string"
+                          },
+                          "hash": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "string"
+                          },
+                          "sd_name": {
+                            "type": "string"
+                          },
+                          "third_source": {
+                            "type": "string"
+                          },
+                          "enable": {
+                            "type": "null"
+                          },
+                          "download_name": {
+                            "type": "string"
+                          },
+                          "download_status": {
+                            "type": "integer"
+                          },
+                          "dependency_status": {
+                            "type": "integer"
+                          },
+                          "delete_time": {
+                            "type": "string"
+                          },
+                          "create_time": {
+                            "type": "string"
+                          },
+                          "update_time": {
+                            "type": "string"
+                          },
+                          "civitai_link": {
+                            "type": "string"
+                          },
+                          "civitai_model_id": {
+                            "type": "integer"
+                          },
+                          "civitai_version_id": {
+                            "type": "integer"
+                          },
+                          "civitai_nsfw": {
+                            "type": "boolean"
+                          },
+                          "civitai_allow_commercial_use": {
+                            "type": "string"
+                          },
+                          "civitai_allow_different_license": {
+                            "type": "boolean"
+                          },
+                          "civitai_download_url": {
+                            "type": "string"
+                          },
+                          "civitai_create_at": {
+                            "type": "string"
+                          },
+                          "civitai_update_at": {
+                            "type": "string"
+                          },
+                          "civitai_trained_words": {
+                            "type": "string"
+                          },
+                          "civitai_tags": {
+                            "type": "string"
+                          },
+                          "civitai_download_count": {
+                            "type": "integer"
+                          },
+                          "civitai_favorite_count": {
+                            "type": "integer"
+                          },
+                          "civitai_comment_count": {
+                            "type": "integer"
+                          },
+                          "civitai_rating_count": {
+                            "type": "integer"
+                          },
+                          "civitai_rating": {
+                            "type": "number"
+                          },
+                          "civitai_images": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string"
+                                },
+                                "nsfw": {
+                                  "type": "string"
+                                },
+                                "meta": {
+                                  "type": "object",
+                                  "properties": {
+                                    "prompt": {
+                                      "type": "string"
+                                    },
+                                    "negative_prompt": {
+                                      "type": "string"
+                                    },
+                                    "sampler_name": {
+                                      "type": "string"
+                                    },
+                                    "steps": {
+                                      "type": "integer"
+                                    },
+                                    "cfg_scale": {
+                                      "type": "integer"
+                                    },
+                                    "seed": {
+                                      "type": "integer"
+                                    },
+                                    "height": {
+                                      "type": "integer"
+                                    },
+                                    "width": {
+                                      "type": "integer"
+                                    },
+                                    "model_name": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "prompt",
+                                    "negative_prompt",
+                                    "sampler_name",
+                                    "steps",
+                                    "cfg_scale",
+                                    "seed",
+                                    "height",
+                                    "width",
+                                    "model_name"
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "civitai_image_url": {
+                            "type": "string"
+                          },
+                          "civitai_image_nsfw": {
+                            "type": "string"
+                          },
+                          "civitai_origin_image_url": {
+                            "type": "string"
+                          },
+                          "civitai_image_prompt": {
+                            "type": "string"
+                          },
+                          "civitai_image_negative_prompt": {
+                            "type": "string"
+                          },
+                          "civitai_image_sampler_name": {
+                            "type": "string"
+                          },
+                          "civitai_image_height": {
+                            "type": "integer"
+                          },
+                          "civitai_image_width": {
+                            "type": "integer"
+                          },
+                          "civitai_image_steps": {
+                            "type": "integer"
+                          },
+                          "civitai_image_cfg_scale": {
+                            "type": "integer"
+                          },
+                          "civitai_image_seed": {
+                            "type": "integer"
+                          },
+                          "civitai_dependency_model_name": {
+                            "type": "string"
+                          },
+                          "civitai_dependency_version_id": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "模型 API"
+      ]
+    },
+    {
+      "path": "/v2/config",
+      "method": "GET",
+      "summary": "查询s3配置",
+      "description": "该端点用于查询当前配置的S3 Bucket。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string",
+                        "description": "AWS 区域"
+                      },
+                      "bucket": {
+                        "type": "string",
+                        "description": "AWS存储桶"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "region",
+                      "bucket",
+                      "path"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ]
+    },
+    {
+      "path": "/v2/config",
+      "method": "GET",
+      "summary": "查询s3配置",
+      "description": "该端点用于查询当前配置的S3 Bucket。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string",
+                        "description": "AWS 区域"
+                      },
+                      "bucket": {
+                        "type": "string",
+                        "description": "AWS存储桶"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "region",
+                      "bucket",
+                      "path"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ]
+    },
+    {
+      "path": "/v3/async/txt2video",
+      "method": "POST",
+      "summary": "文本转视频 API",
+      "description": "此 API 使用文本生成新视频，您可以在此处获取指导：https://novita.ai/get-started/img2video.html#_3-text-to-video 。\n\n",
+      "parameters": [
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "response_video_type": {
+                      "type": "string",
+                      "description": "返回的视频类型。"
+                    }
+                  }
+                },
+                "model_name": {
+                  "type": "string",
+                  "description": "型号名称"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "视频高度，范围 [256, 1024]"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "视频宽度，范围 [256, 1024]"
+                },
+                "seed": {
+                  "type": "integer",
+                  "description": "种子"
+                },
+                "steps": {
+                  "type": "integer",
+                  "description": "脚步"
+                },
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "否定提示词，除以\\\",\\\""
+                },
+                "prompts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "frames": {
+                        "type": "integer",
+                        "description": "该视频剪辑的帧。"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "description": "正向提示词，除以\\\",\\\"。"
+                      }
+                    }
+                  },
+                  "description": "提示的总帧数需要小于或等于128，其中总帧数为所有提示帧的累加和。"
+                },
+                "guidance_scale": {
+                  "type": "number",
+                  "description": "此设置表示服务器将听取您的提示的程度。范围：[1, 30]"
+                },
+                "loras": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model_name": {
+                        "type": "string",
+                        "description": "lora 的名称，您可以调用 /v3/models 端点来检索 sd_name 字段作为 model_name，记住不要包含“.safetensors”"
+                      },
+                      "strength": {
+                        "type": "number",
+                        "description": "力量"
+                      }
+                    },
+                    "required": [
+                      "model_name",
+                      "strength"
+                    ]
+                  },
+                  "description": "Lora选项，目前最多支持5个Lora"
+                },
+                "embeddings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model_name": {
+                        "type": "string",
+                        "description": "文本反转模型的名称，您可以使用参数 filter.types=textualinversion 调用 /v3/model 端点来检索 sd_name_in_api 字段作为 model_name。"
+                      }
+                    },
+                    "required": [
+                      "model_name"
+                    ]
+                  },
+                  "description": "文本反转选项，当前支持最多 5 个嵌入"
+                },
+                "clip_skip": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "model_name",
+                "height",
+                "width",
+                "seed",
+                "steps",
+                "prompts"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "task_id": {
+                    "type": "string",
+                    "description": "task_id，可用于查询端点https://docs.novita.ai/task-api/v3-async-task-result中的任务状态。"
+                  }
+                },
+                "required": [
+                  "task_id"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "视频 API"
+      ]
+    },
+    {
+      "path": "/v2/config",
+      "method": "POST",
+      "summary": "配置s3配置",
+      "description": "该端点允许用户指定 S3 存储桶来存储他们的图像。用户可以灵活使用不同的键来映射到不同的存储桶。请将您的 AWS S3 存储桶策略配置更改为以下格式，您可以在这里获得指导：https://novita.ai/get-started/Account_account_and_key.html#_5-configure-s3-address 。 (将 {BucketName} 替换为真实的目标存储桶名称)：{'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'CanonicalUser':'e98cde8d11ec7c03ac08688f1a933b08b0f0f7746b21c4f2e7b2c8202cc0532f'},'Action':['s3:PutObject','s3:PutObjectAcl'],'Resource':'arn:aws:s3:::{BucketName}/*'}]}\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "s3_region": {
+                  "type": "string",
+                  "description": "s3区域面积"
+                },
+                "s3_bucket": {
+                  "type": "string",
+                  "description": "s3桶"
+                },
+                "s3_path": {
+                  "type": "string",
+                  "description": "存储图像的 s3 路径"
+                }
+              },
+              "required": [
+                "s3_region",
+                "s3_bucket"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ]
+    }
+  ],
+  "fsd": [
+    {
+      "path": "/v3/create-tile",
+      "method": "POST",
+      "summary": "创建图块",
+      "description": "此功能生成的图像可用作重复图块，为织物、壁纸和纹理创建无缝图案。您可以在此处获取指导：https://novita.ai/get-started/UseCase_ImageEnhancement.html#_13-create-tile。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "创建图块的负提示词，长度[0, 512]，除以“,”"
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "创建的图块的正向提示词，长度[1, 512]，除以“,”"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "图像的宽度。范围：[128, 1024]。"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "图像的高度。范围：[128, 1024]。"
+                },
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "response_image_type": {
+                      "type": "string"
+                    },
+                    "enterprise_plan": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "当设置为 true 时， enterprise_plan 将启动。"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "negative_prompt",
+                "prompt",
+                "width",
+                "height",
+                "extra"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image_file": {
+                    "type": "string"
+                  },
+                  "image_type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "image_file",
+                  "image_type"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "reason",
+                  "message"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
+    },
+    {
+      "path": "/v3/remove-watermark",
+      "method": "POST",
+      "summary": "去除水印",
+      "description": "自动去除图像中的水印。您可以在此处获取指导：https://novita.ai/get-started/UseCase_ImageEnhancement.html#_16-remove-watermark\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_file": {
+                  "type": "string",
+                  "description": "原图base64，最大分辨率1024*1024，最大文件大小30Mb。"
+                },
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "response_image_type": {
+                      "type": "string"
+                    },
+                    "enterprise_plan": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "description": "当设置为 true 时， enterprise_plan 将启动。"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "image_file",
+                "extra"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image_file": {
+                    "type": "string"
+                  },
+                  "image_type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "image_file",
+                  "image_type"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "reason",
+                  "message"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "案例 API"
+      ]
+    }
+  ],
+  "fdss": [
+    {
+      "path": "/v2/txt2img",
+      "method": "POST",
+      "summary": "文字转图像",
+      "description": "文本到图像端点，只会返回一个task_id。您应该使用 task_id 调用 /v2/progress API 端点以检索图像生成结果。输出以“image/png”格式提供。指导： https: [//novita.ai/get-started/Basic_txt2img.html#_1-txt2img-request-with-normal-parameter](https://novita.ai/get-started/Basic_txt2img.html#_1-txt2img-request-with-normal-parameter)。",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "enable_nsfw_detection": {
+                      "type": "boolean",
+                      "description": "设置为 true 时，将启用 NSFW 检测，每个生成的图像会产生 0.0015 美元的额外费用。"
+                    }
+                  },
+                  "required": [
+                    "enable_nsfw_detection"
+                  ]
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "肯定提示词，用“，”分隔。如果要使用 LoRA，可以使用参数 filter.types=lora 调用“/v3/model”端点，以检索“sd_name_in_api”字段作为“model_name”。请记住，Lora 模型的格式为“<lora:${sd_name}:${weight}>”。"
+                },
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "否定提示词，用“,”分隔"
+                },
+                "sampler_name": {
+                  "type": "string",
+                  "description": "这个去噪过程称为采样，因为稳定扩散在每个步骤中都会生成一个新的样本图像。"
+                },
+                "batch_size": {
+                  "type": "integer",
+                  "description": "一代中生成了多少图像。范围：[0, 8]"
+                },
+                "n_iter": {
+                  "type": "integer",
+                  "description": "多少代了。范围：[0, 8]"
+                },
+                "steps": {
+                  "type": "integer",
+                  "description": "将步骤视为图像创建过程的迭代。范围：(0, 50]"
+                },
+                "cfg_scale": {
+                  "type": "integer",
+                  "description": "此设置表示稳定扩散将听取您的提示的程度。范围：(0, 30]"
+                },
+                "seed": {
+                  "type": "integer",
+                  "description": "种子是稳定扩散产生噪声的数字。"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "图像的高度。范围：(0, 2048]"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "图像的宽度。范围：(0, 2048]"
+                },
+                "model_name": {
+                  "type": "string",
+                  "description": "稳定扩散模型的名称，您可以使用参数filter.types=checkpoint调用`/v3/model`端点来检索`sd_name_in_api`字段作为`model_name`。"
+                },
+                "restore_faces": {
+                  "type": "boolean",
+                  "description": "启用稳定扩散恢复面插件。"
+                },
+                "restore_faces_model": {
+                  "type": "string",
+                  "description": "人脸恢复算法。-“GFPGAN”旨在开发一种用于现实世界面部恢复的实用算法。它利用封装在预训练人脸 GAN（例如 StyleGAN2）中的丰富多样的先验进行盲脸恢复，请在此处获取指导：https://github.com/TencentARC/GFPGAN；- ‘CodeFormer’是一个基于 Transformer 的预测网络，可以对低质量人脸的全局构成和上下文进行建模以进行编码预测，即使在输入信息严重缺失的情况下也可以恢复与目标人脸非常接近的自然人脸图像，在这里获取指导：https://github.com/sc Zhou/CodeFormer ；"
+                },
+                "sd_vae": {
+                  "type": "string",
+                  "description": "VAE(Variational Auto Encoder)，sd_vae 可以在 api /v3/model 中通过查询参数 filter.types=vae 访问，以检索 `sd_name` 字段作为 `sd_vae`。"
+                },
+                "clip_skip": {
+                  "type": "integer",
+                  "description": "该参数表示优化期间从底部开始停止的层数，因此clip_skip on 2意味着，在CLIP有12层的SD1.x模型中，您将停止在第10层。"
+                },
+                "enable_hr": {
+                  "type": "boolean",
+                  "description": "雇用。修复功能开关。"
+                },
+                "hr_upscaler": {
+                  "type": "string",
+                  "description": "升级型号名称。人工智能升级器是用大量数据训练的模型。"
+                },
+                "hr_scale": {
+                  "type": "integer",
+                  "description": "图像的放大倍数，如果设置了参数hr_resize_x和hr_resize_y，则该参数将被忽略。"
+                },
+                "hr_resize_x": {
+                  "type": "null",
+                  "description": "目标图像宽度，最大图像尺寸为2048，仅在参数hr_scale=1时生效。"
+                },
+                "hr_resize_y": {
+                  "type": "null",
+                  "description": "目标图像高度，最大图像尺寸为2048，仅在参数hr_scale=1时生效。"
+                },
+                "img_expire_ttl": {
+                  "type": "null",
+                  "description": "图像存储时间（秒）。范围 [0, 604800]"
+                },
+                "sd_refiner": {
+                  "type": "object",
+                  "properties": {
+                    "checkpoint": {
+                      "type": "string"
+                    },
+                    "switch_at": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "checkpoint",
+                    "switch_at"
+                  ],
+                  "description": "细化信息以增强图像细节。"
+                },
+                "controlnet_units": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string",
+                        "description": "在使用图像进行调节之前，对传递到该单元的图像使用预处理器。***SD 1.5 的控制网络：control_v11e_sd15_ip2p、control_v11e_sd15_shuffle、control_v11f1e_sd15_tile、control_v11f1p_sd15_深度、control_v11p_sd15_canny、control_v11p_sd15_inpaint、control_v11p_sd15_lineart、control_v1 1p_sd15_mlsd、control_v11p_sd15_normalbae、control_v11p_sd15_openpose、control_v11p_sd15_scribble、control_v11p_sd15_seg、control_v11p_sd15_softedge、control_v11p_sd15s2_lineart_anime、ip-adapter-plus-face_sd15、 ip-adapter_sd15_plus，ip-适配器_sd15；***SDXL 控制网：t2i-adapter_diffusers_xl_canny、t2i-adapter_diffusers_xl_depth_midas、t2i-adapter_diffusers_xl_depth_zoe、t2i-adapter_diffusers_xl_lineart、t2i-adapter_diffusers_xl_openpose、t2i-adapter_diff users_xl_sketch、t2i-adapter_xl_canny、t2i-adapter_xl_openpose、t2i-adapter_xl_sketch、ip-adapter_xl"
+                      },
+                      "weight": {
+                        "type": "null",
+                        "description": "该单位的重量。默认为 1"
+                      },
+                      "input_image": {
+                        "type": "string",
+                        "description": "输入图像的base64"
+                      },
+                      "module": {
+                        "type": "string",
+                        "description": "在使用图像进行调节之前，对传递到该单元的图像使用预处理器。"
+                      },
+                      "control_mode": {
+                        "type": "integer",
+                        "description": "0 表示平衡，1 表示“我的提示更重要”2 表示“ControlNet 更重要”"
+                      },
+                      "mask": {
+                        "type": "string"
+                      },
+                      "resize_mode": {
+                        "type": "integer"
+                      },
+                      "processor_res": {
+                        "type": "null"
+                      },
+                      "threshold_a": {
+                        "type": "null"
+                      },
+                      "threshold_b": {
+                        "type": "null"
+                      },
+                      "guidance_start": {
+                        "type": "null"
+                      },
+                      "guidance_end": {
+                        "type": "null"
+                      },
+                      "pixel_perfect": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "model",
+                      "weight",
+                      "input_image",
+                      "module",
+                      "control_mode"
+                    ]
+                  },
+                  "description": "控制网。"
+                }
+              },
+              "required": [
+                "prompt",
+                "sampler_name",
+                "batch_size",
+                "n_iter",
+                "steps",
+                "cfg_scale",
+                "height",
+                "width",
+                "model_name"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "CodeNormal = 0、CodeInternalError = -1、CodeInvalidJSON = 1、CodeModelNotExist = 2、CodeTaskIdNotExist = 3、CodeInvalidAuth = 4、CodeHostUnavailable = 5、CodeParamRangeOutOfLimit = 6、CodeCostBalanceFailure = 7、CodeSamplerNotExist = 8、CodeTimeout = 9"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "task_id": {
+                        "type": "string",
+                        "description": "任务 ID，由 `/v2/progress` 使用"
+                      },
+                      "warn": {
+                        "type": "string",
+                        "description": "潜在风险的警告消息"
+                      }
+                    },
+                    "required": [
+                      "task_id"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "基本 API"
+      ]
+    }
+  ]
 }

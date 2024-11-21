@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ApiDetail.css';
 
-const ApiDetail = ({ api }) => {
+const ApiDetail = ({ api, onSave, isSaved }) => {
   const [activeParamTab, setActiveParamTab] = useState('query');
 
   if (!api) {
@@ -128,70 +128,75 @@ const ApiDetail = ({ api }) => {
 
   return (
     <div className="api-detail">
-      <h2>{api.summary || `${method} ${path}`}</h2>
-      
-      <div className="section">
-        <h3>Endpoint</h3>
-        <div className="endpoint">
-          <span className={`method ${method.toLowerCase()}`}>{method}</span>
-          <span className="path">{path}</span>
-        </div>
+      <div className="api-detail-header">
+        <h2>{api.summary || `${method} ${path}`}</h2>
+        {!isSaved && (
+          <button onClick={() => onSave(api)} className="save-button">
+            Save API
+          </button>
+        )}
       </div>
-
-      {api.description && (
+      <div className="api-detail-content">
+        {api.description && (
+          <div className="api-description">
+            <h3>Description</h3>
+            <p>{api.description}</p>
+          </div>
+        )}
+        <div className="api-endpoint">
+          <h3>Endpoint</h3>
+          <div className="endpoint-info">
+            <span className="method">{method}</span>
+            <span className="path">{path}</span>
+          </div>
+        </div>
         <div className="section">
-          <h3>Description</h3>
-          <p>{api.description}</p>
+          <h3>Parameters</h3>
+          <div className="tabs">
+            {queryParams.length > 0 && (
+              <button 
+                className={`tab ${activeParamTab === 'query' ? 'active' : ''}`}
+                onClick={() => setActiveParamTab('query')}
+              >
+                Query ({queryParams.length})
+              </button>
+            )}
+            {headerParams.length > 0 && (
+              <button 
+                className={`tab ${activeParamTab === 'header' ? 'active' : ''}`}
+                onClick={() => setActiveParamTab('header')}
+              >
+                Headers ({headerParams.length})
+              </button>
+            )}
+            {pathParams.length > 0 && (
+              <button 
+                className={`tab ${activeParamTab === 'path' ? 'active' : ''}`}
+                onClick={() => setActiveParamTab('path')}
+              >
+                Path ({pathParams.length})
+              </button>
+            )}
+            {hasRequestBody && (
+              <button 
+                className={`tab ${activeParamTab === 'body' ? 'active' : ''}`}
+                onClick={() => setActiveParamTab('body')}
+              >
+                Body
+              </button>
+            )}
+          </div>
+          <div className="tab-content">
+            {activeParamTab === 'query' && renderParameterTable(queryParams)}
+            {activeParamTab === 'header' && renderParameterTable(headerParams)}
+            {activeParamTab === 'path' && renderParameterTable(pathParams)}
+            {activeParamTab === 'body' && renderRequestBody()}
+          </div>
         </div>
-      )}
-
-      <div className="section">
-        <h3>Parameters</h3>
-        <div className="tabs">
-          {queryParams.length > 0 && (
-            <button 
-              className={`tab ${activeParamTab === 'query' ? 'active' : ''}`}
-              onClick={() => setActiveParamTab('query')}
-            >
-              Query ({queryParams.length})
-            </button>
-          )}
-          {headerParams.length > 0 && (
-            <button 
-              className={`tab ${activeParamTab === 'header' ? 'active' : ''}`}
-              onClick={() => setActiveParamTab('header')}
-            >
-              Headers ({headerParams.length})
-            </button>
-          )}
-          {pathParams.length > 0 && (
-            <button 
-              className={`tab ${activeParamTab === 'path' ? 'active' : ''}`}
-              onClick={() => setActiveParamTab('path')}
-            >
-              Path ({pathParams.length})
-            </button>
-          )}
-          {hasRequestBody && (
-            <button 
-              className={`tab ${activeParamTab === 'body' ? 'active' : ''}`}
-              onClick={() => setActiveParamTab('body')}
-            >
-              Body
-            </button>
-          )}
+        <div className="section">
+          <h3>Responses</h3>
+          {renderResponses()}
         </div>
-        <div className="tab-content">
-          {activeParamTab === 'query' && renderParameterTable(queryParams)}
-          {activeParamTab === 'header' && renderParameterTable(headerParams)}
-          {activeParamTab === 'path' && renderParameterTable(pathParams)}
-          {activeParamTab === 'body' && renderRequestBody()}
-        </div>
-      </div>
-
-      <div className="section">
-        <h3>Responses</h3>
-        {renderResponses()}
       </div>
     </div>
   );

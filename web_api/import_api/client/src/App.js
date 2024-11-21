@@ -5,6 +5,8 @@ import ApiDetail from './components/ApiDetail';
 import Toast from './components/Toast';
 import DirectoryModal from './components/DirectoryModal';
 import ApiDirectory from './components/ApiDirectory';
+import DocumentView from './components/DocumentView';
+import ApiList from './components/ApiList';
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:3001';
@@ -38,21 +40,59 @@ function App() {
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
 
   useEffect(() => {
-    loadSavedApis();
+    // Only initialize state if needed
+    console.log('App.js: Initial mount');
   }, []);
 
   const loadSavedApis = async () => {
+    console.log('=== START: Loading Saved APIs ===');
+    
     try {
-      const response = await axios.get(`${API_BASE_URL}/saved-apis`);
-      if (response.data && Array.isArray(response.data.apis)) {
-        setSavedApis(response.data.apis);
-        if (activeTab === 'saved') {
-          setApis(response.data.apis);
+      setLoading(true);
+      setError(null);
+      
+      // Get directories first
+      const dirResponse = await axios.get(`${API_BASE_URL}/api/directories`);
+      const directories = dirResponse.data;
+      console.log('>>> Directories from server:', directories);
+      
+      // Get APIs organized by directory
+      const response = await axios.get(`${API_BASE_URL}/api/saved-apis`);
+      const apisByDirectory = response.data; // This is now the raw api.json content
+      console.log('>>> APIs by directory:', apisByDirectory);
+      
+      // Transform the data structure to our app's format
+      const allApis = [];
+      
+      // For each directory in api.json, add its APIs with directory info
+      Object.entries(apisByDirectory).forEach(([directory, apis]) => {
+        if (Array.isArray(apis)) {
+          const apisWithDir = apis.map(api => ({
+            ...api,
+            directory // Add directory name to each API
+          }));
+          allApis.push(...apisWithDir);
         }
+      });
+
+      console.log('>>> Processed APIs:', allApis.map(api => ({
+        path: api.path,
+        directory: api.directory
+      })));
+      
+      if (allApis.length > 0) {
+        console.log('>>> Setting APIs in state, count:', allApis.length);
+        setSavedApis(allApis);
+        setApis(allApis);
+      } else {
+        setError('No APIs found');
       }
     } catch (error) {
-      console.error('Error loading saved APIs:', error);
-      setError('Failed to load saved APIs');
+      console.error('Error in loadSavedApis:', error.message);
+      setError(`Failed to load APIs: ${error.message}`);
+    } finally {
+      setLoading(false);
+      console.log('=== END: Loading Saved APIs ===');
     }
   };
 
@@ -79,8 +119,7 @@ function App() {
     }
   };
 
-  const handleUrlSubmit = async (event) => {
-    event.preventDefault();
+  const handleImportUrl = async () => {
     if (!urlInput) return;
 
     try {
@@ -117,9 +156,9 @@ function App() {
       setLoading(true);
       setError(null);
       
-      // 保存当前选中的API到指定目录
+      // Save the current selected API to specified directory
       const response = await axios.post(`${API_BASE_URL}/api/save`, {
-        apis: [selectedApi],  // 发送完整的API对象
+        apis: [selectedApi],  // Send complete API object
         directory
       });
       
@@ -129,8 +168,11 @@ function App() {
         type: 'success'
       });
       
-      // 重新加载保存的APIs
-      await loadSavedApis();
+      // Don't reload saved APIs if we're on the import tab
+      if (activeTab === 'saved') {
+        await loadSavedApis();
+      }
+      
       setIsDirectoryModalOpen(false);
     } catch (error) {
       console.error('Error saving API:', error);
@@ -146,13 +188,18 @@ function App() {
     setUrlInput('');
   };
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     setActiveTab(tab);
     setSelectedApi(null);
+    
     if (tab === 'saved') {
-      setApis(savedApis);
+      console.log('Switching to saved tab, loading saved APIs');
+      await loadSavedApis();  // Load saved APIs only for 'saved' tab
     } else {
+      // For 'new' (import) tab, clear everything
       setApis([]);
+      setUrlInput('');
+      setError(null);
     }
   };
 
@@ -171,102 +218,89 @@ function App() {
       </header>
       
       <div className="app-content">
-        <aside className="sidebar">
+        <div className="sidebar">
           <nav className="sidebar-nav">
             <button
               className={`nav-item ${activeTab === 'new' ? 'active' : ''}`}
               onClick={() => handleTabChange('new')}
             >
-              <i className="nav-icon fas fa-file-import"></i>
-              <span>Import API</span>
+              <span className="nav-icon">📥</span>
+              Import API
             </button>
             <button
               className={`nav-item ${activeTab === 'saved' ? 'active' : ''}`}
               onClick={() => handleTabChange('saved')}
             >
-              <i className="nav-icon fas fa-save"></i>
-              <span>Saved APIs</span>
+              <span className="nav-icon">📚</span>
+              Saved APIs
             </button>
           </nav>
-          {activeTab === 'saved' && (
-            <ApiDirectory 
-              apis={savedApis} 
-              onSelect={handleApiSelect}
-              selectedApi={selectedApi}
-            />
-          )}
-        </aside>
+        </div>
 
-        <main className="main-content">
-          <div className="content-area">
-            <div className="content-left">
-              <div className="api-tree-container">
-                <ApiTree 
-                  apis={apis} 
-                  onSelect={handleApiSelect} 
+        <div className="main-content">
+          {activeTab === 'new' && (
+            <div className="import-controls">
+              <div className="controls-row">
+                <div className="url-input-group">
+                  <input
+                    type="text"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="Enter API URL..."
+                    className="url-input"
+                  />
+                  <button
+                    onClick={handleImportUrl}
+                    className="import-button"
+                    disabled={loading}
+                  >
+                    Import URL
+                  </button>
+                </div>
+                <div className="file-upload-group">
+                  <label className="import-button">
+                    <input
+                      type="file"
+                      accept=".json,.yaml,.yml"
+                      onChange={handleFileUpload}
+                      className="file-input"
+                    />
+                    Upload API File
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="content-panels">
+            {activeTab === 'new' ? (
+              <div className="api-list-panel">
+                <ApiList
+                  apis={apis}
+                  onSelect={handleApiSelect}
                   selectedApi={selectedApi}
                 />
               </div>
-            </div>
+            ) : (
+              <DocumentView
+                apis={savedApis}
+                onSelectApi={handleApiSelect}
+                selectedApi={selectedApi}
+              />
+            )}
 
-            <div className="content-right">
-              <div className="content-right-header">
-                {activeTab === 'new' && (
-                  <div className="header-controls">
-                    <div className="import-controls">
-                      <div className="file-import">
-                        <input
-                          type="file"
-                          accept=".json,.yaml,.yml"
-                          onChange={handleFileUpload}
-                          id="file-upload"
-                        />
-                        <label htmlFor="file-upload" className="control-button">
-                          <i className="button-icon fas fa-file-upload"></i>
-                          Choose File
-                        </label>
-                      </div>
-                      <div className="url-import">
-                        <form onSubmit={handleUrlSubmit} className="url-form">
-                          <input
-                            type="url"
-                            value={urlInput}
-                            onChange={(e) => setUrlInput(e.target.value)}
-                            placeholder="Enter Swagger/OpenAPI URL"
-                          />
-                          <button type="submit" className="control-button">
-                            <i className="button-icon fas fa-link"></i>
-                            Import URL
-                          </button>
-                        </form>
-                      </div>
-                      <button onClick={handleClear} className="control-button clear">
-                        <i className="button-icon fas fa-trash"></i>
-                        Clear
-                      </button>
-                    </div>
-                    {selectedApi && (
-                      <button 
-                        className="action-button save"
-                        onClick={handleSaveApi}
-                      >
-                        <i className="button-icon fas fa-save"></i>
-                        Save API
-                      </button>
-                    )}
-                  </div>
-                )}
+            {/* API Details Panel */}
+            {selectedApi && (
+              <div className="api-detail-container">
+                <ApiDetail
+                  api={selectedApi}
+                  onSave={handleSaveApi}
+                  isSaved={savedApis.includes(selectedApi)}
+                />
               </div>
-              <div className="content-right-body">
-                {selectedApi && (
-                  <div className="api-detail-container">
-                    <ApiDetail api={selectedApi} />
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
-        </main>
+        </div>
       </div>
 
       {error && <div className="error-toast">{error}</div>}
