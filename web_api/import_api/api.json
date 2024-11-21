@@ -1,0 +1,283 @@
+{
+  "test": [
+    {
+      "path": "/v2/img2img",
+      "method": "POST",
+      "summary": "图像到图像",
+      "description": "图像到图像端点，只会返回一个task_id。您应该使用task_id调用/v2/progress API端点以检索图像生成结果。输出以“image/png”格式提供。指导： https: //novita.ai/get-started/Basic_img2img.html。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "extra": {
+                  "type": "object",
+                  "properties": {
+                    "enable_nsfw_detection": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "enable_nsfw_detection"
+                  ]
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "肯定提示词，用“，”分隔。如果要使用 LoRA，可以使用参数 filter.types=lora 调用“/v3/model”端点，以检索“sd_name_in_api”字段作为“model_name”。请记住，Lora 模型的格式为“<lora:${sd_name}:${weight}>”。"
+                },
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "否定提示词，用“,”分隔，还可以添加“badhandv4_16755”等嵌入（文本反转）模型，同时，嵌入可以在端点中访问：https://docs.novita.ai/models-api/query-具有查询参数 'filter.types=textualinversion' 的模型，例如 'negative_prompt': 'badhandv4_16755'"
+                },
+                "sampler_name": {
+                  "type": "string",
+                  "description": "这个去噪过程称为采样，因为稳定扩散在每个步骤中都会生成一个新的样本图像。"
+                },
+                "batch_size": {
+                  "type": "integer",
+                  "description": "一代中生成了多少图像。范围：[0, 8]"
+                },
+                "n_iter": {
+                  "type": "integer",
+                  "description": "多少代了。范围：[0, 8]"
+                },
+                "steps": {
+                  "type": "integer",
+                  "description": "将步骤视为图像创建过程的迭代。范围：(0, 50]"
+                },
+                "cfg_scale": {
+                  "type": "integer",
+                  "description": "此设置表示稳定扩散将听取您的提示的程度。范围：(0, 30]"
+                },
+                "seed": {
+                  "type": "integer",
+                  "description": "种子是稳定扩散产生噪声的数字。"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "图像的高度。范围：(0, 2048]"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "图像的宽度。范围：(0, 2048]"
+                },
+                "model_name": {
+                  "type": "string",
+                  "description": "稳定扩散模型的名称，您可以使用参数filter.types=checkpoint调用`/v3/model`端点来检索`sd_name_in_api`字段作为`model_name`。"
+                },
+                "init_images": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "denoising_strength": {
+                  "type": "number",
+                  "description": "它添加的噪音量是受控制的。"
+                },
+                "restore_faces": {
+                  "type": "boolean",
+                  "description": "启用稳定扩散恢复面插件。"
+                },
+                "sd_vae": {
+                  "type": "string",
+                  "description": "VAE(Variational Auto Encoder)，sd_vae 可以在 api /v3/model 中通过查询参数 filter.types=vae 访问，以检索 `sd_name` 字段作为 `sd_vae`。"
+                },
+                "clip_skip": {
+                  "type": "integer",
+                  "description": "该参数表示优化期间从底部开始停止的层数，因此clip_skip on 2意味着，在CLIP有12层的SD1.x模型中，您将停止在第10层。"
+                },
+                "mask": {
+                  "type": "string",
+                  "description": "png 的 Base64，修复掩码。"
+                },
+                "mask_blur": {
+                  "type": "null",
+                  "description": "设置填充区域边界的模糊程度。"
+                },
+                "resize_mode": {
+                  "type": "null",
+                  "description": "调整大小模式，其中0表示“仅调整大小”，1表示“裁剪并调整大小”，2表示“调整大小并填充”，3表示“仅调整大小（潜在放大）”"
+                },
+                "image_cfg_scale": {
+                  "type": "null",
+                  "description": "图像cfg比例"
+                },
+                "inpainting_fill": {
+                  "type": "null",
+                  "description": "如何重绘填充区域。0：填充，根据周围颜色重画 1：原始，根据原始图像重画 2：潜在噪声，变回噪声并重画 3：隐性无，根据填充区域的颜色"
+                },
+                "inpaint_full_res": {
+                  "type": "null",
+                  "description": "指定是应用还是保护填充区域。0：整体描绘整个插图并更改填充部分。1：仅蒙版 仅绘制填充区域，然后恢复原始图像。"
+                },
+                "inpaint_full_res_padding": {
+                  "type": "null",
+                  "description": "此设置控制有多少额外像素可以用作仅遮罩模式的参考点。如果您无法生成正确的图像，则可以增加数量。这是选择“仅屏蔽”时要设置多少边距的数值。增加该值的缺点是会降低输出质量。指导：https://civitai.com/articles/161/basic-inpainting-guide"
+                },
+                "inpainting_mask_invert": {
+                  "type": "null",
+                  "description": "指定是否反转蒙版。0 - 修复被遮盖 1 - 修复未被遮盖"
+                },
+                "initial_noise_multiplier": {
+                  "type": "null",
+                  "description": "设置中 img2img 的噪声倍增器。该缩放因子应用于 img2img 的随机潜在张量。降低它可以减少闪烁。"
+                },
+                "img_expire_ttl": {
+                  "type": "null",
+                  "description": "图像存储时间（秒）。范围 [0, 604800]"
+                },
+                "sd_refiner": {
+                  "type": "object",
+                  "properties": {
+                    "checkpoint": {
+                      "type": "string"
+                    },
+                    "switch_at": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "checkpoint",
+                    "switch_at"
+                  ],
+                  "description": "图像存储时间（秒）。范围 [0, 604800]"
+                },
+                "controlnet_units": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string"
+                      },
+                      "weight": {
+                        "type": "number"
+                      },
+                      "input_image": {
+                        "type": "string"
+                      },
+                      "module": {
+                        "type": "string"
+                      },
+                      "control_mode": {
+                        "type": "integer"
+                      },
+                      "mask": {
+                        "type": "string"
+                      },
+                      "resize_mode": {
+                        "type": "null"
+                      },
+                      "processor_res": {
+                        "type": "null"
+                      },
+                      "threshold_a": {
+                        "type": "null"
+                      },
+                      "threshold_b": {
+                        "type": "null"
+                      },
+                      "guidance_start": {
+                        "type": "null"
+                      },
+                      "guidance_end": {
+                        "type": "null"
+                      },
+                      "pixel_perfect": {
+                        "type": "boolean"
+                      },
+                      "lowvram": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "description": "控制网。"
+                },
+                "controlnet_no_detectmap": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "prompt",
+                "sampler_name",
+                "batch_size",
+                "n_iter",
+                "steps",
+                "cfg_scale",
+                "height",
+                "width",
+                "model_name",
+                "init_images"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "null",
+                    "description": "CodeNormal = 0、CodeInternalError = -1、CodeInvalidJSON = 1、CodeModelNotExist = 2、CodeTaskIdNotExist = 3、CodeInvalidAuth = 4、CodeHostUnavailable = 5、CodeParamRangeOutOfLimit = 6、CodeCostBalanceFailure = 7、CodeSamplerNotExist = 8、CodeTimeout = 9"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "task_id": {
+                        "type": "string",
+                        "description": "任务 ID，由 `/v2/progress` 使用"
+                      },
+                      "warn": {
+                        "type": "string",
+                        "description": "潜在风险的警告消息"
+                      }
+                    },
+                    "required": [
+                      "task_id"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "基本 API"
+      ]
+    }
+  ],
+  "test2": [],
+  "fsd": []
+}

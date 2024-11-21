@@ -1,0 +1,65 @@
+.api-directory {
+  padding: 10px;
+}
+
+.directory-group {
+  margin-bottom: 10px;
+}
+
+.directory-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.directory-header:hover {
+  background-color: #f0f0f0;
+}
+
+.arrow {
+  display: inline-block;
+  margin-right: 5px;
+  transition: transform 0.2s;
+}
+
+.arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.directory-name {
+  margin-right: 5px;
+  font-weight: 500;
+}
+
+.api-count {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.api-list {
+  margin-left: 20px;
+  margin-top: 5px;
+}
+
+.api-item {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.api-item:hover {
+  background-color: #f0f0f0;
+}
+
+.api-item.selected {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.api-icon {
+  margin-right: 5px;
+}

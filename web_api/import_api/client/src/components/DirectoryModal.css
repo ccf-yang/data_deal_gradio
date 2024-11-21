@@ -1,0 +1,106 @@
+.directory-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.directory-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.directory-modal h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.directory-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.directory-item {
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.directory-item:hover {
+  background-color: #f5f5f5;
+}
+
+.directory-item.selected {
+  background-color: #e3f2fd;
+}
+
+.new-directory-input {
+  margin: 15px 0;
+  display: flex;
+  gap: 8px;
+}
+
+.new-directory-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.new-dir-btn {
+  width: 100%;
+  background-color: #f5f5f5;
+  color: #666;
+  margin: 10px 0;
+}
+
+.modal-actions button:first-child {
+  background-color: #1976d2;
+  color: white;
+}
+
+.modal-actions button:last-child {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.modal-actions button:hover:not(:disabled) {
+  opacity: 0.9;
+}
