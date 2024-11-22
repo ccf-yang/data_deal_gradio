@@ -1,318 +1,313 @@
 import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Upload, Input, Button, message, Alert } from 'antd';
+import { UploadOutlined, LinkOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import ApiTree from './components/ApiTree';
-import ApiDetail from './components/ApiDetail';
-import Toast from './components/Toast';
 import DirectoryModal from './components/DirectoryModal';
-import ApiDirectory from './components/ApiDirectory';
-import DocumentView from './components/DocumentView';
-import ApiList from './components/ApiList';
+import SavedApiTable from './components/SavedApiTable';
+import ImportApiTable from './components/ImportApiTable';
 import './App.css';
+
+const { Header, Sider, Content } = Layout;
 
 const API_BASE_URL = 'http://localhost:3001';
 
 function App() {
-  // 当前导入或解析的API列表，用于显示在左侧树形菜单中
   const [apis, setApis] = useState([]);
-  
-  // 已保存的API列表，用于"Saved APIs"标签页显示
   const [savedApis, setSavedApis] = useState([]);
-  
-  // 当前选中的API详情，用于右侧详情面板显示
   const [selectedApi, setSelectedApi] = useState(null);
-  
-  // 错误信息状态，用于显示API导入或保存时的错误提示
   const [error, setError] = useState(null);
-  
-  // 加载状态标志，用于显示加载动画和禁用操作
   const [loading, setLoading] = useState(false);
-  
-  // URL输入框的值，用于API URL导入功能
   const [urlInput, setUrlInput] = useState('');
-  
-  // 当前激活的标签页，'new'表示新API导入页，'saved'表示已保存API页
-  const [activeTab, setActiveTab] = useState('new'); // 'new' or 'saved'
-  
-  // Toast提示框状态，包含显示状态、消息内容和类型（success/error）
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' }); //initially hidden
-  
-  // 目录选择弹窗状态
+  const [activeMenu, setActiveMenu] = useState('new');
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [selectedApis, setSelectedApis] = useState([]);
 
   useEffect(() => {
-    // Only initialize state if needed
     console.log('App.js: Initial mount');
   }, []);
 
+  const showToast = (type, content) => {
+    messageApi[type](content);
+  };
+
   const loadSavedApis = async () => {
     console.log('=== START: Loading Saved APIs ===');
-    
     try {
       setLoading(true);
       setError(null);
       
-      // Get directories first
-      const dirResponse = await axios.get(`${API_BASE_URL}/api/directories`);
-      const directories = dirResponse.data;
-      console.log('>>> Directories from server:', directories);
-      
-      // Get APIs organized by directory
       const response = await axios.get(`${API_BASE_URL}/api/saved-apis`);
-      const apisByDirectory = response.data; // This is now the raw api.json content
-      console.log('>>> APIs by directory:', apisByDirectory);
+      const apisByDocument = response.data;
       
-      // Transform the data structure to our app's format
-      const allApis = [];
-      
-      // For each directory in api.json, add its APIs with directory info
-      Object.entries(apisByDirectory).forEach(([directory, apis]) => {
-        if (Array.isArray(apis)) {
-          const apisWithDir = apis.map(api => ({
-            ...api,
-            directory // Add directory name to each API
-          }));
-          allApis.push(...apisWithDir);
+      // Transform the data structure while preserving document information
+      const processedApis = Object.entries(apisByDocument).flatMap(([document, documentApis]) => {
+        if (!Array.isArray(documentApis)) {
+          console.warn(`Document ${document} has no APIs or invalid format`);
+          return [];
         }
+
+        return documentApis.map(api => {
+          // If the API has endpoints, process each endpoint
+          if (api.endpoints && Array.isArray(api.endpoints)) {
+            return {
+              ...api,
+              directory: document,
+              endpoints: api.endpoints.map(endpoint => ({
+                ...endpoint,
+                directory: document
+              }))
+            };
+          }
+          // If it's a single endpoint API
+          return {
+            ...api,
+            directory: document
+          };
+        });
       });
 
-      console.log('>>> Processed APIs:', allApis.map(api => ({
-        path: api.path,
-        directory: api.directory
-      })));
-      
-      if (allApis.length > 0) {
-        console.log('>>> Setting APIs in state, count:', allApis.length);
-        setSavedApis(allApis);
-        setApis(allApis);
+      if (processedApis.length > 0) {
+        console.log('Processed APIs:', processedApis);
+        setSavedApis(processedApis);
+        if (activeMenu === 'saved') {
+          setApis(processedApis);
+        }
       } else {
         setError('No APIs found');
       }
     } catch (error) {
       console.error('Error in loadSavedApis:', error.message);
       setError(`Failed to load APIs: ${error.message}`);
+      showToast('error', `Failed to load APIs: ${error.message}`);
     } finally {
       setLoading(false);
-      console.log('=== END: Loading Saved APIs ===');
     }
   };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
+  const handleFileUpload = async (info) => {
+    const { file, onSuccess, onError } = info;
+    
     try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.post(`${API_BASE_URL}/convert`, formData);
-      if (response.data && Array.isArray(response.data.apis)) {
-        setApis(response.data.apis);
-        setSelectedApi(null);
-      }
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${API_BASE_URL}/convert`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      // Ensure we have an array of APIs
+      const apiData = response.data.apis || response.data;
+      setApis(Array.isArray(apiData) ? apiData : [apiData]);
+      showToast('success', 'File uploaded successfully');
+      onSuccess('ok');
     } catch (error) {
-      console.error('Error uploading file:', error);
-      setError(error.response?.data?.error || 'Failed to upload file');
-    } finally {
-      setLoading(false);
+      console.error('Upload error:', error);
+      showToast('error', `Upload failed: ${error.message}`);
+      onError(error);
     }
   };
 
-  const handleImportUrl = async () => {
-    if (!urlInput) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.post(`${API_BASE_URL}/convert-url`, { url: urlInput });
-      if (response.data && Array.isArray(response.data.apis)) {
-        setApis(response.data.apis);
-        setSelectedApi(null);
-      }
-    } catch (error) {
-      console.error('Error fetching from URL:', error);
-      setError(error.response?.data?.error || 'Failed to fetch from URL');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApiSelect = (api) => {
-    setSelectedApi(api);
-  };
-
-  const handleSaveApi = async () => {
-    if (!selectedApi) {
-      setError('No API selected');
+  const handleUrlImport = async () => {
+    if (!urlInput.trim()) {
+      showToast('error', 'Please enter a URL');
       return;
     }
 
-    setIsDirectoryModalOpen(true);
-  };
-
-  const handleDirectorySubmit = async (directory) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      // Save the current selected API to specified directory
-      const response = await axios.post(`${API_BASE_URL}/api/save`, {
-        apis: [selectedApi],  // Send complete API object
-        directory
-      });
-      
-      setToast({
-        visible: true,
-        message: 'API saved successfully',
-        type: 'success'
-      });
-      
-      // Don't reload saved APIs if we're on the import tab
-      if (activeTab === 'saved') {
-        await loadSavedApis();
-      }
-      
-      setIsDirectoryModalOpen(false);
+      const response = await axios.post(`${API_BASE_URL}/convert-url`, { url: urlInput });
+      const apiData = response.data.apis || response.data;
+      setApis(Array.isArray(apiData) ? apiData : [apiData]);
+      showToast('success', 'API imported successfully');
+      setUrlInput('');
     } catch (error) {
-      console.error('Error saving API:', error);
-      setError(error.response?.data?.error || 'Failed to save API');
+      console.error('URL import error:', error);
+      showToast('error', `Import failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClear = () => {
-    setApis([]);
-    setSelectedApi(null);
-    setUrlInput('');
+  const handleSaveSelected = async (selectedApis) => {
+    if (!selectedApis.length) {
+      showToast('warning', 'Please select APIs to save');
+      return;
+    }
+    setIsDirectoryModalOpen(true);
+    setSelectedApis(selectedApis);
   };
 
-  const handleTabChange = async (tab) => {
-    setActiveTab(tab);
-    setSelectedApi(null);
-    
-    if (tab === 'saved') {
-      console.log('Switching to saved tab, loading saved APIs');
-      await loadSavedApis();  // Load saved APIs only for 'saved' tab
-    } else {
-      // For 'new' (import) tab, clear everything
-      setApis([]);
-      setUrlInput('');
-      setError(null);
+  const handleSaveApi = async (directory) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/save`, {
+        apis: selectedApis.map(api => ({
+          ...api,
+          directory
+        })),
+        directory
+      });
+      
+      showToast('success', 'APIs saved successfully');
+      setIsDirectoryModalOpen(false);
+      
+      // Reload saved APIs and switch to saved view
+      await loadSavedApis();
+      setActiveMenu('saved');
+    } catch (error) {
+      console.error('Save error:', error);
+      showToast('error', `Save failed: ${error.message}`);
     }
   };
 
-  const showToast = (message, type = 'success') => {
-    setToast({ visible: true, message, type });
-    setTimeout(() => {
-      setToast({ visible: false, message: '', type: 'success' });
-    }, 2000);
+  const renderImportSection = () => {
+    return (
+      <div style={{ padding: '16px', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Upload.Dragger
+            customRequest={handleFileUpload}
+            showUploadList={false}
+            style={{ 
+              width: '180px',
+              margin: 0,
+              padding: '4px 8px',
+              background: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UploadOutlined style={{ fontSize: '14px', color: '#1890ff' }} />
+              <span style={{ color: '#595959', fontSize: '14px', margin: 0, lineHeight: '1' }}>Upload File</span>
+            </div>
+          </Upload.Dragger>
+
+          <Input
+            placeholder="Enter API URL"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            prefix={<LinkOutlined style={{ color: '#1890ff' }} />}
+            style={{ 
+              width: '400px',
+              height: '40px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+          />
+          
+          <Button
+            type="primary"
+            onClick={handleUrlImport}
+            loading={loading}
+            style={{
+              height: '40px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, #1890ff 0%, #1677ff 100%)'
+            }}
+          >
+            Import from URL
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderContent = () => {
+    if (activeMenu === 'new') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {renderImportSection()}
+          <div style={{ flex: 1, padding: '24px' }}>
+            <ImportApiTable 
+              apis={apis} 
+              loading={loading}
+              onSave={handleSaveSelected}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    if (activeMenu === 'saved') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {error && <Alert message={error} type="error" style={{ marginBottom: '16px' }} />}
+          <SavedApiTable 
+            apis={savedApis} 
+            loading={loading} 
+            onSelect={setSelectedApi}
+          />
+        </div>
+      );
+    }
   };
 
   return (
-    <div className="app">
-      <Toast {...toast} />
-      <header className="app-header">
-        <h1>API Documentation Viewer</h1>
-      </header>
-      
-      <div className="app-content">
-        <div className="sidebar">
-          <nav className="sidebar-nav">
-            <button
-              className={`nav-item ${activeTab === 'new' ? 'active' : ''}`}
-              onClick={() => handleTabChange('new')}
+    <Layout style={{ minHeight: '100vh' }}>
+      {contextHolder}
+      <Header className="header">
+        <h1 style={{ color: 'white' }}>API Documentation Viewer</h1>
+      </Header>
+      <Layout>
+        <Sider 
+          width={200} 
+          className="sidebar"
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[activeMenu]}
+            style={{ 
+              height: '100%', 
+              borderRight: 0,
+              background: 'transparent'
+            }}
+            onClick={({ key }) => {
+              setActiveMenu(key);
+              if (key === 'saved') {
+                loadSavedApis();
+              }
+            }}
+          >
+            <Menu.Item 
+              key="new" 
+              icon={
+                <ImportOutlined style={{ 
+                  fontSize: '18px'
+                }} />
+              }
             >
-              <span className="nav-icon">📥</span>
               Import API
-            </button>
-            <button
-              className={`nav-item ${activeTab === 'saved' ? 'active' : ''}`}
-              onClick={() => handleTabChange('saved')}
+            </Menu.Item>
+            <Menu.Item 
+              key="saved" 
+              icon={
+                <SaveOutlined style={{ 
+                  fontSize: '18px'
+                }} />
+              }
             >
-              <span className="nav-icon">📚</span>
-              Saved APIs
-            </button>
-          </nav>
-        </div>
-
-        <div className="main-content">
-          {activeTab === 'new' && (
-            <div className="import-controls">
-              <div className="controls-row">
-                <div className="url-input-group">
-                  <input
-                    type="text"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="Enter API URL..."
-                    className="url-input"
-                  />
-                  <button
-                    onClick={handleImportUrl}
-                    className="import-button"
-                    disabled={loading}
-                  >
-                    Import URL
-                  </button>
-                </div>
-                <div className="file-upload-group">
-                  <label className="import-button">
-                    <input
-                      type="file"
-                      accept=".json,.yaml,.yml"
-                      onChange={handleFileUpload}
-                      className="file-input"
-                    />
-                    Upload API File
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="content-panels">
-            {activeTab === 'new' ? (
-              <div className="api-list-panel">
-                <ApiList
-                  apis={apis}
-                  onSelect={handleApiSelect}
-                  selectedApi={selectedApi}
-                />
-              </div>
-            ) : (
-              <DocumentView
-                apis={savedApis}
-                onSelectApi={handleApiSelect}
-                selectedApi={selectedApi}
-              />
-            )}
-
-            {/* API Details Panel */}
-            {selectedApi && (
-              <div className="api-detail-container">
-                <ApiDetail
-                  api={selectedApi}
-                  onSave={handleSaveApi}
-                  isSaved={savedApis.includes(selectedApi)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {error && <div className="error-toast">{error}</div>}
-      {loading && <div className="loading-overlay">Loading...</div>}
-
+              Saved API
+            </Menu.Item>
+          </Menu>
+        </Sider>
+        <Layout style={{ padding: '0 24px 24px' }}>
+          <Content style={{ background: '#fff', padding: 24, margin: 0, minHeight: 280 }}>
+            {renderContent()}
+          </Content>
+        </Layout>
+      </Layout>
       <DirectoryModal
-        isOpen={isDirectoryModalOpen}
+        visible={isDirectoryModalOpen}
         onClose={() => setIsDirectoryModalOpen(false)}
-        onSave={handleDirectorySubmit}
+        onSave={handleSaveApi}
       />
-    </div>
+    </Layout>
   );
-}
+};
 
 export default App;

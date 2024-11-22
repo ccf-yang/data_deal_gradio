@@ -1,111 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import './DirectoryModal.css';
+import { Modal, Form, Input, Select, Button, Space, Divider } from 'antd';
+import { PlusOutlined, FolderOutlined } from '@ant-design/icons';
 import axios from 'axios';
+
+const { Option } = Select;
 
 const API_BASE_URL = 'http://localhost:3001';
 
-const DirectoryModal = ({ isOpen, onClose, onSave }) => {
+const DirectoryModal = ({ visible, onClose, onSave }) => {
+  const [form] = Form.useForm();
   const [directories, setDirectories] = useState([]);
-  const [selectedDirectory, setSelectedDirectory] = useState('');
-  const [newDirectory, setNewDirectory] = useState('');
+  const [loading, setLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newDirectoryName, setNewDirectoryName] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-      fetchDirectories();
+    if (visible) {
+      loadDirectories();
     }
-  }, [isOpen]);
+  }, [visible]);
 
-  const fetchDirectories = async () => {
+  const loadDirectories = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/directories`);
-      console.log('Fetched directories:', response.data); // 添加日志查看获取到的数据
       setDirectories(response.data);
     } catch (error) {
-      console.error('Failed to fetch directories:', error.message); // 输出错误信息
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Request data:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
+      console.error('Failed to load directories:', error);
     }
   };
 
   const handleCreateDirectory = async () => {
-    if (!newDirectory.trim()) return;
+    if (!newDirectoryName.trim()) return;
     
     try {
-      await axios.post(`${API_BASE_URL}/api/directories`, { name: newDirectory });
-      await fetchDirectories();
-      setNewDirectory('');
+      setLoading(true);
+      // Add API endpoint to create directory
+      await axios.post(`${API_BASE_URL}/api/directories`, {
+        name: newDirectoryName
+      });
+      await loadDirectories();
+      setNewDirectoryName('');
       setIsCreatingNew(false);
+      form.setFieldsValue({ directory: newDirectoryName });
     } catch (error) {
-      console.error('Failed to create directory:', error.message); // 输出错误信息
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Request data:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
+      console.error('Failed to create directory:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSave = () => {
-    onSave(selectedDirectory);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setLoading(true);
+      await onSave(values.directory);
+      form.resetFields();
+      onClose();
+    } catch (error) {
+      console.error('Validation failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!isOpen) return null;
+  const dropdownRender = (menu) => (
+    <div>
+      {menu}
+      <Divider style={{ margin: '8px 0' }} />
+      {isCreatingNew ? (
+        <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
+          <Input
+            placeholder="New directory name"
+            value={newDirectoryName}
+            onChange={(e) => setNewDirectoryName(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreateDirectory}
+            loading={loading}
+          >
+            Create
+          </Button>
+          <Button onClick={() => {
+            setIsCreatingNew(false);
+            setNewDirectoryName('');
+          }}>
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="text"
+          icon={<PlusOutlined />}
+          onClick={() => setIsCreatingNew(true)}
+          style={{ width: '100%', textAlign: 'left', padding: '8px' }}
+        >
+          Create New Directory
+        </Button>
+      )}
+    </div>
+  );
 
   return (
-    <div className="directory-modal-overlay">
-      <div className="directory-modal">
-        <h2>选择保存目录</h2>
-        
-        <div className="directory-list">
-          {directories.map((dir) => (
-            <div
-              key={dir}
-              className={`directory-item ${selectedDirectory === dir ? 'selected' : ''}`}
-              onClick={() => setSelectedDirectory(dir)}
-            >
-              📁 {dir}
-            </div>
-          ))}
-        </div>
+    <Modal
+      title="Save API to Directory"
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+      >
+        <Form.Item
+          name="directory"
+          label="Select Directory"
+          rules={[{ required: true, message: 'Please select or create a directory' }]}
+        >
+          <Select
+            showSearch
+            allowClear
+            placeholder="Select a directory"
+            dropdownRender={dropdownRender}
+          >
+            {directories.map((dir) => (
+              <Option key={dir} value={dir}>
+                <Space>
+                  <FolderOutlined />
+                  {dir}
+                </Space>
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-        {isCreatingNew ? (
-          <div className="new-directory-input">
-            <input
-              type="text"
-              value={newDirectory}
-              onChange={(e) => setNewDirectory(e.target.value)}
-              placeholder="输入新目录名称"
-            />
-            <button onClick={handleCreateDirectory}>创建</button>
-            <button onClick={() => setIsCreatingNew(false)}>取消</button>
-          </div>
-        ) : (
-          <button className="new-dir-btn" onClick={() => setIsCreatingNew(true)}>
-            + 新建目录
-          </button>
-        )}
-
-        <div className="modal-actions">
-          <button onClick={handleSave} disabled={!selectedDirectory}>
-            保存
-          </button>
-          <button onClick={onClose}>取消</button>
-        </div>
-      </div>
-    </div>
+        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+          <Space>
+            <Button onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Save
+            </Button>
+          </Space>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
