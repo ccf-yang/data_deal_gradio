@@ -525,6 +525,84 @@
         "账户接口"
       ],
       "directory": "cc"
+    },
+    {
+      "path": "/v2/config",
+      "method": "POST",
+      "summary": "配置s3配置",
+      "description": "该端点允许用户指定 S3 存储桶来存储他们的图像。用户可以灵活使用不同的键来映射到不同的存储桶。请将您的 AWS S3 存储桶策略配置更改为以下格式，您可以在这里获得指导：https://novita.ai/get-started/Account_account_and_key.html#_5-configure-s3-address 。 (将 {BucketName} 替换为真实的目标存储桶名称)：{'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'CanonicalUser':'e98cde8d11ec7c03ac08688f1a933b08b0f0f7746b21c4f2e7b2c8202cc0532f'},'Action':['s3:PutObject','s3:PutObjectAcl'],'Resource':'arn:aws:s3:::{BucketName}/*'}]}\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "s3_region": {
+                  "type": "string",
+                  "description": "s3区域面积"
+                },
+                "s3_bucket": {
+                  "type": "string",
+                  "description": "s3桶"
+                },
+                "s3_path": {
+                  "type": "string",
+                  "description": "存储图像的 s3 路径"
+                }
+              },
+              "required": [
+                "s3_region",
+                "s3_bucket"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
+      ],
+      "directory": "cc"
     }
   ],
   "sdf": [
@@ -679,6 +757,73 @@
       },
       "tags": [
         "案例 API"
+      ],
+      "directory": "sdf"
+    },
+    {
+      "path": "/v2/config",
+      "method": "GET",
+      "summary": "查询s3配置",
+      "description": "该端点用于查询当前配置的S3 Bucket。\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "region": {
+                        "type": "string",
+                        "description": "AWS 区域"
+                      },
+                      "bucket": {
+                        "type": "string",
+                        "description": "AWS存储桶"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "region",
+                      "bucket",
+                      "path"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
       ],
       "directory": "sdf"
     }

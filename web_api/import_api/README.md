@@ -1,4 +1,4 @@
-# API Documentation Viewer
+# Test platform
 
 A modern web application for importing, viewing, and managing Swagger/OpenAPI specifications.
 

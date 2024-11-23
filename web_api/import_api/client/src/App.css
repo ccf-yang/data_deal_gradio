@@ -65,8 +65,35 @@
   font-size: 18px !important;
 }
 
+/* Sidebar menu items */
+.ant-menu-item {
+  color: white !important; /* change text color  */
+}
+
+.ant-menu-item:hover {
+  color: #44bd37 !important; /* change text color on hover */
+}
+
+.ant-menu-item-selected {
+  color: #44bd37 !important; /* change text color for selected item */
+}
+
+/* Change icon colors to match text */
+.ant-menu-item .anticon {
+  color: inherit !important;
+}
+
 /* Custom sidebar background */
 .sidebar {
-  background: linear-gradient(180deg, #c5dadf 0%, #131a1c 100%) !important;
+  background: linear-gradient(180deg, #313357 0%, #131a1c 100%) !important;
   border-right: 1px solid #f0f0f0;
+}
+
+/* Header styles */
+.header {
+  background: #313357;  /* Change this color to your desired color */
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }

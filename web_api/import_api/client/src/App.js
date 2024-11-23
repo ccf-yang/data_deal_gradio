@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Upload, Input, Button, message, Alert } from 'antd';
-import { UploadOutlined, LinkOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
+import { 
+  UploadOutlined, 
+  LinkOutlined, 
+  ImportOutlined, 
+  SaveOutlined,
+  GroupOutlined,
+  CloudOutlined,
+  RobotOutlined,
+  CodeOutlined,
+  CheckSquareOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
 import DirectoryModal from './components/DirectoryModal';
 import SavedApiTable from './components/SavedApiTable';
 import ImportApiTable from './components/ImportApiTable';
+import GroupTable from './components/GroupTable';
+import EnvironmentTable from './components/EnvironmentTable';
+import AICasesTable from './components/AICasesTable';
+import FuncCasesTable from './components/FuncCasesTable';
+import FunctionTaskTable from './components/FunctionTaskTable';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
@@ -245,13 +260,53 @@ function App() {
         </div>
       );
     }
+
+    if (activeMenu === 'group') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <GroupTable loading={loading} />
+        </div>
+      );
+    }
+
+    if (activeMenu === 'environment') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <EnvironmentTable />
+        </div>
+      );
+    }
+
+    if (activeMenu === 'aicases') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <AICasesTable />
+        </div>
+      );
+    }
+
+    if (activeMenu === 'funccases') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <FuncCasesTable />
+        </div>
+      );
+    }
+
+    if (activeMenu === 'functask') {
+      return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <FunctionTaskTable />
+        </div>
+      );
+    }
   };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {contextHolder}
-      <Header className="header">
-        <h1 style={{ color: 'white' }}>API Documentation Viewer</h1>
+      <Header className="header" style={{ display: 'flex', alignItems: 'center', height: '90px', justifyContent: 'space-between' }}>
+        <h1 style={{ color: 'white', margin: 0, flexGrow: 1, fontSize: '28px' }}>Test Platform</h1>
       </Header>
       <Layout>
         <Sider 
@@ -275,23 +330,45 @@ function App() {
           >
             <Menu.Item 
               key="new" 
-              icon={
-                <ImportOutlined style={{ 
-                  fontSize: '18px'
-                }} />
-              }
+              icon={<ImportOutlined style={{ fontSize: '18px' }} />}
             >
               Import API
             </Menu.Item>
             <Menu.Item 
               key="saved" 
-              icon={
-                <SaveOutlined style={{ 
-                  fontSize: '18px'
-                }} />
-              }
+              icon={<SaveOutlined style={{ fontSize: '18px' }} />}
             >
               Saved API
+            </Menu.Item>
+            <Menu.Item 
+              key="group" 
+              icon={<GroupOutlined style={{ fontSize: '18px' }} />}
+            >
+              Group
+            </Menu.Item>
+            <Menu.Item 
+              key="environment" 
+              icon={<CloudOutlined style={{ fontSize: '18px' }} />}
+            >
+              Environment
+            </Menu.Item>
+            <Menu.Item 
+              key="aicases" 
+              icon={<RobotOutlined style={{ fontSize: '18px' }} />}
+            >
+              AI Cases
+            </Menu.Item>
+            <Menu.Item 
+              key="funccases" 
+              icon={<CodeOutlined style={{ fontSize: '18px' }} />}
+            >
+              Function Cases
+            </Menu.Item>
+            <Menu.Item 
+              key="functask" 
+              icon={<CheckSquareOutlined style={{ fontSize: '18px' }} />}
+            >
+              Function Task
             </Menu.Item>
           </Menu>
         </Sider>
@@ -302,8 +379,8 @@ function App() {
         </Layout>
       </Layout>
       <DirectoryModal
-        visible={isDirectoryModalOpen}
-        onClose={() => setIsDirectoryModalOpen(false)}
+        open={isDirectoryModalOpen}
+        onCancel={() => setIsDirectoryModalOpen(false)}
         onSave={handleSaveApi}
       />
     </Layout>

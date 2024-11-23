@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Select, Space, Modal } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { Table, Button, Select, Space, Modal, Switch, Tooltip } from 'antd';
+import { 
+  EyeOutlined, 
+  DeleteOutlined, 
+  PlayCircleOutlined, 
+  FileAddOutlined,
+  BarChartOutlined,
+  CodeOutlined,
+  PlusOutlined
+} from '@ant-design/icons';
 import { MethodTag } from './MethodTag';
 import ApiDetailView from './ApiDetailView';
 
@@ -8,23 +16,36 @@ const { Option } = Select;
 
 const SavedApiTable = ({ apis, loading, onSelect }) => {
   const [selectedDirectory, setSelectedDirectory] = useState(null);
-  const [filteredApis, setFilteredApis] = useState(apis);
+  const [filteredApis, setFilteredApis] = useState([]);
   const [selectedApi, setSelectedApi] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [autoStates, setAutoStates] = useState({});
+  const [selectedEnvironment, setSelectedEnvironment] = useState('test');
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Get unique directories for the filter dropdown
   const directories = [...new Set(apis.map(api => api.directory || 'Default'))].sort();
 
+  // Process APIs to add unique keys
+  const processApis = (apis) => {
+    return apis.map((api, index) => ({
+      ...api,
+      key: `${api.path}-${api.method}-${api.directory}-${index}` // Create a truly unique key
+    }));
+  };
+
   useEffect(() => {
-    setFilteredApis(apis);
+    setFilteredApis(processApis(apis));
     setSelectedDirectory(null);
   }, [apis]);
 
   useEffect(() => {
     if (selectedDirectory) {
-      setFilteredApis(apis.filter(api => api.directory === selectedDirectory));
+      setFilteredApis(processApis(apis.filter(api => api.directory === selectedDirectory)));
     } else {
-      setFilteredApis(apis);
+      setFilteredApis(processApis(apis));
     }
   }, [selectedDirectory, apis]);
 
@@ -33,6 +54,28 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
     if (onSelect) {
       onSelect(null);
     }
+  };
+
+  const handleEnvironmentChange = (value) => {
+    setSelectedEnvironment(value);
+  };
+
+  const handleAddToGroup = () => {
+    const selectedApis = filteredApis.filter(api => selectedRowKeys.includes(api.key));
+    console.log('Adding to group:', selectedEnvironment, 'Selected APIs:', selectedApis);
+    // Add your group addition logic here
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onSelect: (record, selected) => {
+      if (selected) {
+        setSelectedRowKeys([...selectedRowKeys, record.key]);
+      } else {
+        setSelectedRowKeys(selectedRowKeys.filter(key => key !== record.key));
+      }
+    },
+    hideSelectAll: true
   };
 
   const showApiDetail = (record) => {
@@ -44,6 +87,38 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedApi(null);
+  };
+
+  const handleAutoChange = (checked, record) => {
+    setAutoStates(prev => ({
+      ...prev,
+      [record.key]: checked
+    }));
+  };
+
+  const handleDelete = (record) => {
+    // Add your delete logic here
+    console.log('Delete:', record);
+  };
+
+  const handleAddCase = (record) => {
+    // Add your add case logic here
+    console.log('Add Case:', record);
+  };
+
+  const handleParamShow = (record) => {
+    // Add your param show logic here
+    console.log('Show Params:', record);
+  };
+
+  const handleRun = (record) => {
+    // Add your run logic here
+    console.log('Run:', record);
+  };
+
+  const handleReport = (record) => {
+    // Add your report logic here
+    console.log('Report:', record);
   };
 
   const columns = [
@@ -77,16 +152,71 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
     {
       title: 'Action',
       key: 'action',
-      width: 100,
+      width: 480,
       render: (_, record) => (
-        <Button 
-          type="primary" 
-          icon={<EyeOutlined />}
-          onClick={() => showApiDetail(record)}
-          size="small"
-        >
-          Details
-        </Button>
+        <Space size="small">
+          <Button 
+            type="primary" 
+            icon={<EyeOutlined />}
+            onClick={() => showApiDetail(record)}
+            size="small"
+            style={{ background: '#1890ff', borderColor: '#1890ff' }}
+          >
+            Details
+          </Button>
+          <Button
+            type="default"
+            icon={<FileAddOutlined />}
+            onClick={() => handleAddCase(record)}
+            size="small"
+            style={{ color: '#52c41a', borderColor: '#52c41a' }}
+          >
+            Add Case
+          </Button>
+          <Button
+            type="default"
+            icon={<CodeOutlined />}
+            onClick={() => handleParamShow(record)}
+            size="small"
+            style={{ color: '#722ed1', borderColor: '#722ed1' }}
+          >
+            Param Show
+          </Button>
+          <Button
+            type="default"
+            icon={<PlayCircleOutlined />}
+            onClick={() => handleRun(record)}
+            size="small"
+            style={{ color: '#13c2c2', borderColor: '#13c2c2' }}
+          >
+            Run
+          </Button>
+          <Button
+            type="default"
+            icon={<BarChartOutlined />}
+            onClick={() => handleReport(record)}
+            size="small"
+            style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
+          >
+            Report
+          </Button>
+          <Button
+            danger
+            type="primary"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record)}
+            size="small"
+          >
+            Delete
+          </Button>
+          <Tooltip title={autoStates[record.key] ? "Auto Mode On" : "Auto Mode Off"}>
+            <Switch
+              size="small"
+              checked={autoStates[record.key]}
+              onChange={(checked) => handleAutoChange(checked, record)}
+            />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
@@ -107,15 +237,41 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
               <Option key={dir} value={dir}>{dir}</Option>
             ))}
           </Select>
+          <span style={{ marginLeft: 16 }}>Environment:</span>
+          <Select
+            style={{ width: 120 }}
+            value={selectedEnvironment}
+            onChange={handleEnvironmentChange}
+          >
+            <Option value="test">Test</Option>
+            <Option value="pre">Pre</Option>
+            <Option value="online">Online</Option>
+          </Select>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddToGroup}
+            style={{ marginLeft: 8 }}
+            disabled={selectedRowKeys.length === 0}
+          >
+            Add to Group ({selectedRowKeys.length} selected)
+          </Button>
         </Space>
       </div>
 
       <Table
+        rowSelection={rowSelection}
         columns={columns}
-        dataSource={filteredApis.map((api, index) => ({ ...api, key: index }))}
+        dataSource={filteredApis}
         loading={loading}
-        pagination={false}
-        size="middle"
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: filteredApis.length,
+          onChange: (page) => setCurrentPage(page),
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+          showSizeChanger: false
+        }}
       />
 
       <Modal
@@ -124,7 +280,6 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
         onCancel={handleModalClose}
         width={800}
         footer={null}
-        destroyOnClose={true}
       >
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
