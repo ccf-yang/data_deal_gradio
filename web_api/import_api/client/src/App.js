@@ -12,6 +12,7 @@ import {
   CheckSquareOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { API_BASE_URL } from './config';
 import DirectoryModal from './components/DirectoryModal';
 import SavedApiTable from './components/SavedApiTable';
 import ImportApiTable from './components/ImportApiTable';
@@ -20,11 +21,10 @@ import EnvironmentTable from './components/EnvironmentTable';
 import AICasesTable from './components/AICasesTable';
 import FuncCasesTable from './components/FuncCasesTable';
 import FunctionTaskTable from './components/FunctionTaskTable';
+import { getSavedApis, saveApis, convertSwagger } from './api/savedApiService';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
-
-const API_BASE_URL = 'http://localhost:3001';
 
 function App() {
   const [apis, setApis] = useState([]);
@@ -52,49 +52,25 @@ function App() {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`${API_BASE_URL}/api/saved-apis`);
-      const apisByDocument = response.data;
+      const apisByDocument = await getSavedApis();
       
       // Transform the data structure while preserving document information
       const processedApis = Object.entries(apisByDocument).flatMap(([document, documentApis]) => {
         if (!Array.isArray(documentApis)) {
-          console.warn(`Document ${document} has no APIs or invalid format`);
           return [];
         }
-
-        return documentApis.map(api => {
-          // If the API has endpoints, process each endpoint
-          if (api.endpoints && Array.isArray(api.endpoints)) {
-            return {
-              ...api,
-              directory: document,
-              endpoints: api.endpoints.map(endpoint => ({
-                ...endpoint,
-                directory: document
-              }))
-            };
-          }
-          // If it's a single endpoint API
-          return {
-            ...api,
-            directory: document
-          };
-        });
+        return documentApis.map(api => ({
+          ...api,
+          directory: document,
+          key: `${api.method}-${api.path}-${document}`
+        }));
       });
 
-      if (processedApis.length > 0) {
-        console.log('Processed APIs:', processedApis);
-        setSavedApis(processedApis);
-        if (activeMenu === 'saved') {
-          setApis(processedApis);
-        }
-      } else {
-        setError('No APIs found');
-      }
+      setSavedApis(processedApis);
+      console.log('=== END: Loading Saved APIs ===');
     } catch (error) {
-      console.error('Error in loadSavedApis:', error.message);
-      setError(`Failed to load APIs: ${error.message}`);
-      showToast('error', `Failed to load APIs: ${error.message}`);
+      console.error('Error loading saved APIs:', error);
+      setError('Failed to load saved APIs');
     } finally {
       setLoading(false);
     }
@@ -104,15 +80,10 @@ function App() {
     const { file, onSuccess, onError } = info;
     
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await axios.post(`${API_BASE_URL}/convert`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const result = await convertSwagger(file);
       
       // Ensure we have an array of APIs
-      const apiData = response.data.apis || response.data;
+      const apiData = result.apis || result;
       setApis(Array.isArray(apiData) ? apiData : [apiData]);
       showToast('success', 'File uploaded successfully');
       onSuccess('ok');
@@ -155,14 +126,7 @@ function App() {
 
   const handleSaveApi = async (directory) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/save`, {
-        apis: selectedApis.map(api => ({
-          ...api,
-          directory
-        })),
-        directory
-      });
-      
+      await saveApis(selectedApis, directory);
       showToast('success', 'APIs saved successfully');
       setIsDirectoryModalOpen(false);
       
@@ -252,11 +216,14 @@ function App() {
       return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           {error && <Alert message={error} type="error" style={{ marginBottom: '16px' }} />}
-          <SavedApiTable 
-            apis={savedApis} 
-            loading={loading} 
-            onSelect={setSelectedApi}
-          />
+          <div style={{ flex: 1, padding: '24px' }}>
+            <SavedApiTable 
+              apis={savedApis} 
+              loading={loading}
+              onReload={loadSavedApis}
+              onSelect={setSelectedApi}
+            />
+          </div>
         </div>
       );
     }
@@ -380,7 +347,7 @@ function App() {
       </Layout>
       <DirectoryModal
         open={isDirectoryModalOpen}
-        onCancel={() => setIsDirectoryModalOpen(false)}
+        onClose={() => setIsDirectoryModalOpen(false)}
         onSave={handleSaveApi}
       />
     </Layout>

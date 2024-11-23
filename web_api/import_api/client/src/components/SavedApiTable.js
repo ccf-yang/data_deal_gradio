@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Select, Space, Modal, Switch, Tooltip } from 'antd';
+import { Table, Button, Select, Space, Modal, Switch, Tooltip, message } from 'antd';
 import { 
   EyeOutlined, 
   DeleteOutlined, 
@@ -11,19 +11,24 @@ import {
 } from '@ant-design/icons';
 import { MethodTag } from './MethodTag';
 import ApiDetailView from './ApiDetailView';
+import GroupModal from './GroupModal';
+import axios from 'axios';
+import { API_BASE_URL, DEFAULT_PAGE_SIZE } from '../config';
+import { removeApis } from '../api/savedApiService';
 
 const { Option } = Select;
 
-const SavedApiTable = ({ apis, loading, onSelect }) => {
+const SavedApiTable = ({ apis, loading, onSelect, onReload }) => {
   const [selectedDirectory, setSelectedDirectory] = useState(null);
   const [filteredApis, setFilteredApis] = useState([]);
   const [selectedApi, setSelectedApi] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
   const [autoStates, setAutoStates] = useState({});
   const [selectedEnvironment, setSelectedEnvironment] = useState('test');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = DEFAULT_PAGE_SIZE;
 
   // Get unique directories for the filter dropdown
   const directories = [...new Set(apis.map(api => api.directory || 'Default'))].sort();
@@ -61,21 +66,79 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
   };
 
   const handleAddToGroup = () => {
+    if (!selectedRowKeys.length) {
+      message.warning('Please select APIs to add to group');
+      return;
+    }
+    setIsGroupModalVisible(true);
+  };
+
+  const handleSaveToGroup = async (groupName) => {
+    try {
+      const selectedApis = filteredApis.filter(api => selectedRowKeys.includes(api.key));
+      await axios.post(`${API_BASE_URL}/api/group/add`, {
+        groupName,
+        apis: selectedApis
+      });
+      message.success('APIs added to group successfully');
+      setSelectedRowKeys([]);
+    } catch (error) {
+      console.error('Failed to add APIs to group:', error);
+      message.error('Failed to add APIs to group');
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (!selectedRowKeys.length) {
+      message.warning('Please select APIs to delete');
+      return;
+    }
+
     const selectedApis = filteredApis.filter(api => selectedRowKeys.includes(api.key));
-    console.log('Adding to group:', selectedEnvironment, 'Selected APIs:', selectedApis);
-    // Add your group addition logic here
+    const groupedByDirectory = selectedApis.reduce((acc, api) => {
+      if (!acc[api.directory]) {
+        acc[api.directory] = [];
+      }
+      acc[api.directory].push(api);
+      return acc;
+    }, {});
+
+    Modal.confirm({
+      title: 'Delete Selected APIs',
+      content: `Are you sure you want to delete ${selectedRowKeys.length} selected APIs?`,
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk: async () => {
+        try {
+          // Delete APIs for each directory
+          for (const [directory, directoryApis] of Object.entries(groupedByDirectory)) {
+            await removeApis(directoryApis, directory);
+          }
+          
+          message.success(`${selectedRowKeys.length} APIs deleted successfully`);
+          setSelectedRowKeys([]);
+          if (onReload) {
+            onReload();
+          }
+        } catch (error) {
+          console.error('Batch delete error:', error);
+          message.error(`Failed to delete APIs: ${error.message}`);
+        }
+      },
+    });
   };
 
   const rowSelection = {
     selectedRowKeys,
-    onSelect: (record, selected) => {
-      if (selected) {
-        setSelectedRowKeys([...selectedRowKeys, record.key]);
-      } else {
-        setSelectedRowKeys(selectedRowKeys.filter(key => key !== record.key));
-      }
+    onChange: (newSelectedRowKeys) => {
+      setSelectedRowKeys(newSelectedRowKeys);
     },
-    hideSelectAll: true
+    selections: [
+      Table.SELECTION_ALL,
+      Table.SELECTION_INVERT,
+      Table.SELECTION_NONE,
+    ]
   };
 
   const showApiDetail = (record) => {
@@ -96,9 +159,26 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
     }));
   };
 
-  const handleDelete = (record) => {
-    // Add your delete logic here
-    console.log('Delete:', record);
+  const handleDelete = async (record) => {
+    Modal.confirm({
+      title: 'Delete API',
+      content: `Are you sure you want to delete "${record.path}" from "${record.directory}"?`,
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk: async () => {
+        try {
+          await removeApis([record], record.directory);
+          message.success('API deleted successfully');
+          if (onReload) {
+            onReload();
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          message.error(`Failed to delete API: ${error.message}`);
+        }
+      },
+    });
   };
 
   const handleAddCase = (record) => {
@@ -223,55 +303,67 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: 16 }}>
-        <Space>
-          <span>Filter by Directory:</span>
-          <Select
-            style={{ width: 200 }}
-            value={selectedDirectory}
-            onChange={handleDirectoryChange}
-            allowClear
-            placeholder="Select a directory"
-          >
-            {directories.map(dir => (
-              <Option key={dir} value={dir}>{dir}</Option>
-            ))}
-          </Select>
-          <span style={{ marginLeft: 16 }}>Environment:</span>
-          <Select
-            style={{ width: 120 }}
-            value={selectedEnvironment}
-            onChange={handleEnvironmentChange}
-          >
-            <Option value="test">Test</Option>
-            <Option value="pre">Pre</Option>
-            <Option value="online">Online</Option>
-          </Select>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAddToGroup}
-            style={{ marginLeft: 8 }}
-            disabled={selectedRowKeys.length === 0}
-          >
-            Add to Group ({selectedRowKeys.length} selected)
-          </Button>
-        </Space>
+      <div style={{ marginBottom: 16, display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <Select
+          style={{ width: 200 }}
+          placeholder="Filter by directory"
+          onChange={handleDirectoryChange}
+          value={selectedDirectory}
+          allowClear
+        >
+          {directories.map(dir => (
+            <Option key={dir} value={dir}>{dir}</Option>
+          ))}
+        </Select>
+
+        <Select
+          style={{ width: 120 }}
+          value={selectedEnvironment}
+          onChange={handleEnvironmentChange}
+        >
+          <Option value="test">Test</Option>
+          <Option value="prod">Production</Option>
+        </Select>
+
+        <Button
+          type="primary"
+          onClick={handleAddToGroup}
+          disabled={!selectedRowKeys.length}
+          icon={<PlusOutlined />}
+          style={{
+            background: '#52c41a',
+            borderColor: '#52c41a'
+          }}
+        >
+          Add to Group ({selectedRowKeys.length})
+        </Button>
+
+        <Button
+          type="primary"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={handleBatchDelete}
+          disabled={!selectedRowKeys.length}
+        >
+          Delete Selected ({selectedRowKeys.length})
+        </Button>
       </div>
 
       <Table
-        rowSelection={rowSelection}
+        rowSelection={{
+          ...rowSelection,
+          columnWidth: 100
+        }}
         columns={columns}
         dataSource={filteredApis}
         loading={loading}
         pagination={{
           current: currentPage,
           pageSize: pageSize,
-          total: filteredApis.length,
           onChange: (page) => setCurrentPage(page),
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          showSizeChanger: false
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
         }}
+        size="middle"
       />
 
       <Modal
@@ -280,9 +372,17 @@ const SavedApiTable = ({ apis, loading, onSelect }) => {
         onCancel={handleModalClose}
         width={800}
         footer={null}
+        destroyOnClose={true}
       >
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
+
+      <GroupModal
+        open={isGroupModalVisible}
+        onClose={() => setIsGroupModalVisible(false)}
+        onSave={handleSaveToGroup}
+        apis={selectedRowKeys.map(key => filteredApis.find(api => api.key === key))}
+      />
     </div>
   );
 };

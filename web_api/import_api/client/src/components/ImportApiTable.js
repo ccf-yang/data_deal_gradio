@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Button, Modal } from 'antd';
+import { SaveOutlined } from '@ant-design/icons';
 import { MethodTag } from './MethodTag';
 import ApiDetailView from './ApiDetailView';
 
@@ -77,7 +78,7 @@ const ImportApiTable = ({ apis, loading, onSave }) => {
             height: '40px',
             borderRadius: '8px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)'
+            background: 'linear-gradient(135deg, #52c41a 0%, #189e0d 100%)'
           }}
         >
           Save Selected APIs
@@ -97,8 +98,8 @@ const ImportApiTable = ({ apis, loading, onSave }) => {
         title="API Details"
         open={isModalVisible}
         onCancel={handleModalClose}
-        width={800}
         footer={null}
+        width={800}
         destroyOnClose={true}
       >
         {selectedApi && <ApiDetailView api={selectedApi} />}

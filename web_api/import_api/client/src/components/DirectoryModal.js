@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, Button, Space, Divider } from 'antd';
 import { PlusOutlined, FolderOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import { getDirectories, createDirectory } from '../api/savedApiService';
 
 const { Option } = Select;
 
-const API_BASE_URL = 'http://localhost:3001';
-
-const DirectoryModal = ({ visible, onClose, onSave }) => {
+const DirectoryModal = ({ open, onClose, onSave }) => {
   const [form] = Form.useForm();
   const [directories, setDirectories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,15 +13,15 @@ const DirectoryModal = ({ visible, onClose, onSave }) => {
   const [newDirectoryName, setNewDirectoryName] = useState('');
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadDirectories();
     }
-  }, [visible]);
+  }, [open]);
 
   const loadDirectories = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/directories`);
-      setDirectories(response.data);
+      const data = await getDirectories();
+      setDirectories(data);
     } catch (error) {
       console.error('Failed to load directories:', error);
     }
@@ -34,10 +32,7 @@ const DirectoryModal = ({ visible, onClose, onSave }) => {
     
     try {
       setLoading(true);
-      // Add API endpoint to create directory
-      await axios.post(`${API_BASE_URL}/api/directories`, {
-        name: newDirectoryName
-      });
+      await createDirectory(newDirectoryName);
       await loadDirectories();
       setNewDirectoryName('');
       setIsCreatingNew(false);
@@ -106,7 +101,7 @@ const DirectoryModal = ({ visible, onClose, onSave }) => {
   return (
     <Modal
       title="Save API to Directory"
-      open={visible}
+      open={open}
       onCancel={onClose}
       footer={null}
       destroyOnClose
