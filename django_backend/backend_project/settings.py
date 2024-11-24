@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "savedapi",  # Add your app
     "autoapi",
     "environment",
+    "function_cases",
+    "function_task",  # Add function task app
 ]
 
 MIDDLEWARE = [

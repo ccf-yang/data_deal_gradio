@@ -1,174 +1,512 @@
-import React, { useState } from 'react';
-import { Table, Button, Modal, Tag, Select } from 'antd';
-import { CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, Select, Space, message, DatePicker, Tag } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined, ClockCircleOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import moment from 'moment';
+import { getAllFunctionTasks, createFunctionTask, deleteFunctionTasks, updateFunctionTask, getSelectedFunctionTasks } from '../api/functionTaskService';
+import { getAllFunctionCases } from '../api/functionCaseService';
+import { ASSIGNERS, TASK_STATUSES } from '../config';
 
 const { Option } = Select;
 
-const FunctionTaskTable = () => {
-  const [isCasesModalVisible, setIsCasesModalVisible] = useState(false);
-  const [selectedCases, setSelectedCases] = useState([]);
-  const [taskData, setTaskData] = useState([
+// Create a simplified version of FuncCasesTable for the modal
+const CasesTable = ({ cases }) => {
+  const columns = [
     {
-      id: '1',
-      name: 'Login Module Testing',
-      assignedPerson: 'John Doe',
-      cases: [
-        { id: '1', name: 'Test Login Success', status: 'Pending' },
-        { id: '2', name: 'Test Login Failure', status: 'Pending' },
-      ],
-      status: 'In Progress'
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      fixed: 'left',
+      width: 150
     },
     {
-      id: '2',
-      name: 'User Profile Testing',
-      assignedPerson: 'Jane Smith',
-      cases: [
-        { id: '3', name: 'Test Profile Update', status: 'Pending' },
-        { id: '4', name: 'Test Avatar Upload', status: 'Pending' },
-      ],
-      status: 'In Progress'
+      title: 'Module',
+      dataIndex: 'module',
+      key: 'module',
+      width: 120,
+      filters: [...new Set(cases.map(c => c.module))].map(module => ({
+        text: module,
+        value: module,
+      })),
+      onFilter: (value, record) => record.module === value
     },
-  ]);
-
-  const statusOptions = [
-    { value: 'Not Started', color: 'default' },
-    { value: 'In Progress', color: 'blue' },
-    { value: 'Blocked', color: 'red' },
-    { value: 'Under Review', color: 'orange' },
-    { value: 'Completed', color: 'green' },
+    {
+      title: 'Test Title',
+      dataIndex: 'testtitle',
+      key: 'testtitle',
+      width: 200,
+      render: (text) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {text}
+        </div>
+      )
+    },
+    {
+      title: 'Directory',
+      dataIndex: 'directory',
+      key: 'directory',
+      width: 150,
+      filters: [...new Set(cases.map(c => c.directory))].map(dir => ({
+        text: dir,
+        value: dir,
+      })),
+      onFilter: (value, record) => record.directory === value
+    },
+    {
+      title: 'Importance',
+      dataIndex: 'importance',
+      key: 'importance',
+      width: 100,
+      filters: [
+        { text: 'High', value: 'high' },
+        { text: 'Middle', value: 'middle' },
+        { text: 'Low', value: 'low' }
+      ],
+      onFilter: (value, record) => record.importance === value,
+      render: (text) => (
+        <span style={{
+          color: text === 'high' ? '#f5222d' :
+                 text === 'middle' ? '#faad14' :
+                 '#52c41a'
+        }}>
+          {text}
+        </span>
+      )
+    },
+    {
+      title: 'Precondition',
+      dataIndex: 'precondition',
+      key: 'precondition',
+      width: 200,
+      render: (text) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {text}
+        </div>
+      )
+    },
+    {
+      title: 'Test Input',
+      dataIndex: 'testinput',
+      key: 'testinput',
+      width: 200,
+      render: (text) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {text}
+        </div>
+      )
+    },
+    {
+      title: 'Steps',
+      dataIndex: 'steps',
+      key: 'steps',
+      width: 250,
+      render: (text) => (
+        <div style={{ whiteSpace: 'pre-line' }}>
+          {text?.split('\n').map((step, index) => (
+            <div key={index}>
+              {index + 1}. {step}
+            </div>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: 'Expected Results',
+      dataIndex: 'expectedresults',
+      key: 'expectedresults',
+      width: 200,
+      render: (text) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {text}
+        </div>
+      )
+    }
   ];
 
-  const handleViewCases = (cases) => {
-    setSelectedCases(cases);
+  return (
+    <Table
+      columns={columns}
+      dataSource={cases.map(c => ({ ...c, key: c.id }))}
+      pagination={{ 
+        pageSize: 10,
+        showSizeChanger: true,
+        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} cases`
+      }}
+      scroll={{ x: 1500, y: 500 }}
+      size="middle"
+      bordered
+    />
+  );
+};
+
+const FunctionTaskTable = () => {
+  const [tasks, setTasks] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [form] = Form.useForm();
+  const [editingTask, setEditingTask] = useState(null);
+  const [assignedPersonFilter, setAssignedPersonFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [isCasesModalVisible, setIsCasesModalVisible] = useState(false);
+  const [selectedTaskCases, setSelectedTaskCases] = useState([]);
+  const [selectedTaskName, setSelectedTaskName] = useState('');
+  const [allCases, setAllCases] = useState({});
+
+  // Get unique assigned persons and statuses for filters
+  const assignedPersons = [...new Set(tasks.map(t => t.assignedPerson))];
+
+  useEffect(() => {
+    fetchTasks();
+    fetchAllCases();
+  }, []);
+
+  const fetchAllCases = async () => {
+    try {
+      const response = await getAllFunctionCases();
+      const casesMap = {};
+      response.cases.forEach(c => {
+        casesMap[c.id] = c;
+      });
+      setAllCases(casesMap);
+    } catch (error) {
+      console.error('Error fetching cases:', error);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const response = await getAllFunctionTasks();
+      const tasksData = response.tasks || [];
+      setTasks(tasksData.map(task => ({
+        ...task,
+        key: task.id.toString(),
+        casesCount: task.cases?.length || 0
+      })));
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      message.error('Failed to fetch tasks');
+    }
+  };
+
+  const handleViewCases = (record) => {
+    const taskCases = record.cases.map(caseId => allCases[caseId]).filter(Boolean);
+    setSelectedTaskCases(taskCases);
+    setSelectedTaskName(record.name);
     setIsCasesModalVisible(true);
   };
 
-  const handleFinishTask = (record) => {
-    console.log('Finishing task:', record);
-    // Add your logic to handle task completion
+  const handleCreate = () => {
+    form.resetFields();
+    setEditingTask(null);
+    setIsModalVisible(true);
   };
 
-  const handleStatusChange = (value, record) => {
-    const newData = taskData.map(item => {
-      if (item.id === record.id) {
-        return { ...item, status: value };
+  const handleEdit = async (record) => {
+    try {
+      const response = await getSelectedFunctionTasks([record.id]);
+      const taskData = response.tasks[0];
+      setEditingTask(taskData);
+      form.setFieldsValue({
+        name: taskData.name,
+        assignedPerson: taskData.assignedPerson,
+        status: taskData.status
+      });
+      setIsModalVisible(true);
+    } catch (error) {
+      console.error('Error fetching task details:', error);
+      message.error('Failed to fetch task details');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Please select tasks to delete');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Are you sure you want to delete these tasks?',
+      content: 'This action cannot be undone.',
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk: async () => {
+        try {
+          await deleteFunctionTasks(selectedRowKeys);
+          message.success('Tasks deleted successfully');
+          setSelectedRowKeys([]);
+          fetchTasks();
+        } catch (error) {
+          console.error('Error deleting tasks:', error);
+          message.error('Failed to delete tasks');
+        }
       }
-      return item;
     });
-    setTaskData(newData);
-    console.log('Status changed for task:', record.id, 'New status:', value);
   };
 
-  const casesColumns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag color={status === 'Pending' ? 'orange' : 'green'}>
-          {status}
-        </Tag>
-      ),
-    },
-  ];
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      if (editingTask) {
+        await updateFunctionTask({
+          id: editingTask.id,
+          ...values,
+          cases: editingTask.cases // Preserve existing cases
+        });
+        message.success('Task updated successfully');
+      } else {
+        await createFunctionTask({
+          ...values,
+          cases: [], // New task starts with no cases
+          status: values.status || 'pending'
+        });
+        message.success('Task created successfully');
+      }
+
+      setIsModalVisible(false);
+      form.resetFields();
+      setEditingTask(null);
+      fetchTasks();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      message.error('Failed to save task');
+    }
+  };
+
+  const getStatusTag = (status) => {
+    let color = 'default';
+    let icon = null;
+
+    switch (status) {
+      case TASK_STATUSES.PENDING:
+        color = 'warning';
+        icon = <ClockCircleOutlined />;
+        break;
+      case TASK_STATUSES.IN_PROGRESS:
+        color = 'processing';
+        icon = <SyncOutlined spin />;
+        break;
+      case TASK_STATUSES.COMPLETED:
+        color = 'success';
+        icon = <CheckCircleOutlined />;
+        break;
+      default:
+        break;
+    }
+
+    return (
+      <Tag color={color} icon={icon}>
+        {status}
+      </Tag>
+    );
+  };
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name)
     },
     {
       title: 'Assigned Person',
       dataIndex: 'assignedPerson',
       key: 'assignedPerson',
+      filters: assignedPersons.map(person => ({ text: person, value: person })),
+      filteredValue: assignedPersonFilter ? [assignedPersonFilter] : null,
+      onFilter: (value, record) => record.assignedPerson === value
     },
     {
       title: 'Cases',
-      key: 'cases',
-      render: (_, record) => (
-        <Button
-          type="link"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewCases(record.cases)}
-        >
-          View Cases ({record.cases.length})
+      dataIndex: 'casesCount',
+      key: 'casesCount',
+      sorter: (a, b) => a.casesCount - b.casesCount,
+      render: (text, record) => (
+        <Button type="link" onClick={() => handleViewCases(record)}>
+          {text} cases
         </Button>
-      ),
+      )
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status, record) => (
-        <Select
-          value={status}
-          style={{ width: 140 }}
-          onChange={(value) => handleStatusChange(value, record)}
-          dropdownMatchSelectWidth={false}
-        >
-          {statusOptions.map(option => (
-            <Option key={option.value} value={option.value}>
-              <Tag color={option.color}>{option.value}</Tag>
-            </Option>
-          ))}
-        </Select>
-      ),
+      filters: [
+        { text: 'Pending', value: TASK_STATUSES.PENDING },
+        { text: 'In Progress', value: TASK_STATUSES.IN_PROGRESS },
+        { text: 'Completed', value: TASK_STATUSES.COMPLETED }
+      ],
+      filteredValue: statusFilter ? [statusFilter] : null,
+      onFilter: (value, record) => record.status === value,
+      render: (status) => getStatusTag(status)
+    },
+    {
+      title: 'Deadline',
+      dataIndex: 'deadline',
+      key: 'deadline',
+      sorter: (a, b) => {
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return moment(a.deadline).unix() - moment(b.deadline).unix();
+      },
+      render: (deadline) => {
+        if (!deadline) return '-';
+        const date = moment(deadline);
+        const now = moment();
+        const isOverdue = date.isBefore(now);
+        const color = isOverdue ? '#ff4d4f' : 
+                     date.isBefore(now.add(3, 'days')) ? '#faad14' : 
+                     '#52c41a';
+        return (
+          <span style={{ color }}>
+            {date.format('YYYY-MM-DD HH:mm')}
+          </span>
+        );
+      }
     },
     {
       title: 'Action',
       key: 'action',
       render: (_, record) => (
         <Button
-          type="primary"
-          icon={<CheckCircleOutlined />}
-          onClick={() => handleFinishTask(record)}
-          style={{ background: '#52c41a', borderColor: '#52c41a' }}
-          disabled={record.status === 'Completed'}
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => handleEdit(record)}
         >
-          Finish
+          Edit
         </Button>
-      ),
-    },
+      )
+    }
   ];
 
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+    }
+  };
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreate}
+        >
+          New Task
+        </Button>
+        <Button
+          type="primary"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={handleDelete}
+          disabled={selectedRowKeys.length === 0}
+        >
+          Delete Selected
+        </Button>
+      </Space>
+
       <Table
+        rowSelection={rowSelection}
         columns={columns}
-        dataSource={taskData}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
+        dataSource={tasks}
+        onChange={(pagination, filters) => {
+          setAssignedPersonFilter(filters.assignedPerson?.[0]);
+          setStatusFilter(filters.status?.[0]);
+        }}
       />
 
       <Modal
-        title="Task Cases"
+        title={editingTask ? 'Edit Task' : 'Create New Task'}
+        open={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+          setEditingTask(null);
+        }}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            status: TASK_STATUSES.PENDING,
+            deadline: editingTask?.deadline ? moment(editingTask.deadline) : null
+          }}
+        >
+          <Form.Item
+            name="name"
+            label="Task Name"
+            rules={[{ required: true, message: 'Please enter task name' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="assignedPerson"
+            label="Assigned Person"
+            rules={[{ required: true, message: 'Please select assigned person' }]}
+          >
+            <Select>
+              {ASSIGNERS.map(assigner => (
+                <Option key={assigner.id} value={assigner.name}>
+                  {assigner.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Status"
+            initialValue={TASK_STATUSES.PENDING}
+          >
+            <Select>
+              <Option value={TASK_STATUSES.PENDING}>
+                <Space>
+                  <ClockCircleOutlined />
+                  Pending
+                </Space>
+              </Option>
+              <Option value={TASK_STATUSES.IN_PROGRESS}>
+                <Space>
+                  <SyncOutlined spin />
+                  In Progress
+                </Space>
+              </Option>
+              <Option value={TASK_STATUSES.COMPLETED}>
+                <Space>
+                  <CheckCircleOutlined />
+                  Completed
+                </Space>
+              </Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="deadline"
+            label="Deadline"
+          >
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              placeholder="Select deadline"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={`Cases for Task: ${selectedTaskName}`}
         open={isCasesModalVisible}
         onCancel={() => setIsCasesModalVisible(false)}
+        width={1000}
         footer={null}
-        width={800}
       >
-        <Table
-          columns={casesColumns}
-          dataSource={selectedCases}
-          rowKey="id"
-          pagination={false}
-        />
+        <CasesTable cases={selectedTaskCases} />
       </Modal>
     </div>
   );

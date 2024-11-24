@@ -23,4 +23,6 @@ urlpatterns = [
     path('savedapi/', include('savedapi.urls')),  # Include the savedapis URLs under /api/
     path('autoapi/', include('autoapi.urls')),
     path('environment/', include('environment.urls')),
+    path('function_cases/', include('function_cases.urls')),  # Include function cases URLs
+    path('function_task/', include('function_task.urls')),  # Include function task URLs
 ]
