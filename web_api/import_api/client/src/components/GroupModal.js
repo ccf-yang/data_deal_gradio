@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Divider } from 'antd';
+import { Modal, Form, Input, Select, Button, Space, Divider, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { getGroups, createGroup } from '../api/groupApiService';
 
 const { Option } = Select;
 
@@ -20,27 +19,32 @@ const GroupModal = ({ open, onClose, onSave, apis }) => {
 
   const loadGroups = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/groups`);
-      setGroups(response.data);
+      const response = await getGroups();
+      const groupNames = Array.isArray(response) ? response.map(group => group.name) : [];
+      setGroups(groupNames);
     } catch (error) {
       console.error('Failed to load groups:', error);
+      message.error('Failed to load groups');
     }
   };
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
-    if (!newGroupName.trim()) return;
+    if (!newGroupName.trim()) {
+      message.warning('Please enter a group name');
+      return;
+    }
     
     try {
       setLoading(true);
-      await axios.post(`${API_BASE_URL}/api/groups`, {
-        name: newGroupName
-      });
+      await createGroup(newGroupName);
+      message.success('Group created successfully');
       await loadGroups();
       form.setFieldsValue({ group: newGroupName });
       setNewGroupName('');
     } catch (error) {
       console.error('Failed to create group:', error);
+      message.error('Failed to create group');
     } finally {
       setLoading(false);
     }
@@ -67,18 +71,14 @@ const GroupModal = ({ open, onClose, onSave, apis }) => {
       footer={null}
       destroyOnClose
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-      >
+      <Form form={form} onFinish={handleFinish} layout="vertical">
         <Form.Item
           name="group"
-          label="Select Group"
+          label="Select or Create Group"
           rules={[{ required: true, message: 'Please select or create a group' }]}
         >
           <Select
-            placeholder="Select a group"
+            placeholder="Select a group or create new"
             dropdownRender={menu => (
               <>
                 {menu}
@@ -88,9 +88,19 @@ const GroupModal = ({ open, onClose, onSave, apis }) => {
                     placeholder="Enter new group name"
                     value={newGroupName}
                     onChange={e => setNewGroupName(e.target.value)}
-                    onKeyDown={e => e.stopPropagation()}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCreateGroup(e);
+                      }
+                    }}
                   />
-                  <Button type="text" icon={<PlusOutlined />} onClick={handleCreateGroup}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleCreateGroup}
+                    loading={loading}
+                  >
                     Create
                   </Button>
                 </Space>
@@ -98,15 +108,15 @@ const GroupModal = ({ open, onClose, onSave, apis }) => {
             )}
           >
             {groups.map(group => (
-              <Option key={group.name} value={group.name}>
-                {group.name}
+              <Option key={group} value={group}>
+                {group}
               </Option>
             ))}
           </Select>
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
+          <Button type="primary" htmlType="submit" loading={loading} block>
             Save to Group
           </Button>
         </Form.Item>

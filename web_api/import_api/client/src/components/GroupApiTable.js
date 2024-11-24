@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Modal } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Modal, message } from 'antd';
 import {
   EyeOutlined,
   DeleteOutlined,
@@ -7,10 +7,22 @@ import {
 } from '@ant-design/icons';
 import { MethodTag } from './MethodTag';
 import ApiDetailView from './ApiDetailView';
+import ParamsShowModal from './ParamsShowModal';
+import { getApiCode, deleteApiFromGroup } from '../api/groupApiService';
 
-const GroupApiTable = ({ apis, loading }) => {
+const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
+  const [apis, setApis] = useState(initialApis);
   const [selectedApi, setSelectedApi] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isParamsModalVisible, setIsParamsModalVisible] = useState(false);
+  const [apiParams, setApiParams] = useState('');
+  const [paramsLoading, setParamsLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState({});
+
+  // Update local apis when prop changes
+  useEffect(() => {
+    setApis(initialApis);
+  }, [initialApis]);
 
   const showApiDetail = (record) => {
     setSelectedApi(record);
@@ -22,12 +34,57 @@ const GroupApiTable = ({ apis, loading }) => {
     setSelectedApi(null);
   };
 
-  const handleDelete = (record) => {
-    console.log('Delete API:', record);
+  const handleParamsModalClose = () => {
+    setIsParamsModalVisible(false);
+    setApiParams(null);
   };
 
-  const handleParamShow = (record) => {
-    console.log('Show Params:', record);
+  const handleDelete = async (record) => {
+    try {
+      setDeleteLoading(prev => ({ ...prev, [record.key]: true }));
+      await deleteApiFromGroup(
+        record.method,
+        record.path,
+        record.directory,
+        groupName
+      );
+      message.success('API deleted from group successfully');
+      
+      // Update local state immediately
+      setApis(prevApis => prevApis.filter(api => 
+        !(api.method === record.method && 
+          api.path === record.path && 
+          api.directory === record.directory)
+      ));
+      
+      // Notify parent component to refresh
+      if (onReload) {
+        onReload();
+      }
+    } catch (error) {
+      console.error('Failed to delete API:', error);
+      message.error('Failed to delete API from group');
+    } finally {
+      setDeleteLoading(prev => ({ ...prev, [record.key]: false }));
+    }
+  };
+
+  const handleParamShow = async (record) => {
+    try {
+      setParamsLoading(true);
+      const response = await getApiCode({
+        api_method: record.method,
+        api_path: record.path,
+        directory: record.directory
+      });
+      setApiParams(response.bussiness_code);
+      setIsParamsModalVisible(true);
+    } catch (error) {
+      console.error('Failed to fetch API params:', error);
+      message.error('Failed to load API parameters');
+    } finally {
+      setParamsLoading(false);
+    }
   };
 
   const columns = [
@@ -72,6 +129,7 @@ const GroupApiTable = ({ apis, loading }) => {
             type="default"
             icon={<CodeOutlined />}
             onClick={() => handleParamShow(record)}
+            loading={paramsLoading}
             size="small"
             style={{ color: '#722ed1', borderColor: '#722ed1' }}
           >
@@ -82,6 +140,7 @@ const GroupApiTable = ({ apis, loading }) => {
             type="primary"
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record)}
+            loading={deleteLoading[record.key]}
             size="small"
           >
             Delete
@@ -103,7 +162,6 @@ const GroupApiTable = ({ apis, loading }) => {
           showSizeChanger: false
         }}
       />
-
       <Modal
         title="API Details"
         open={isModalVisible}
@@ -113,6 +171,12 @@ const GroupApiTable = ({ apis, loading }) => {
       >
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
+      
+      <ParamsShowModal
+        visible={isParamsModalVisible}
+        onClose={handleParamsModalClose}
+        testcasesCode={apiParams}
+      />
     </>
   );
 };

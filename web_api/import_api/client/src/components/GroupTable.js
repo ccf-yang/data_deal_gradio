@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Modal, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Modal, Select, message } from 'antd';
 import {
   FileAddOutlined,
   PlayCircleOutlined,
@@ -8,49 +8,87 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import GroupApiTable from './GroupApiTable';
+import { 
+  getAllGroupedApis, 
+  getGroups, 
+  deleteGroup, 
+  getGroupApis, 
+  deleteApiFromGroup 
+} from '../api/groupApiService';
+import { getEnvironments } from '../api/environmentService';
 
 const { Option } = Select;
 
-const GroupTable = ({ loading }) => {
+const GroupTable = ({ loading: externalLoading }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedApis, setSelectedApis] = useState([]);
   const [selectedGroupName, setSelectedGroupName] = useState('');
+  const [groupData, setGroupData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState({});
+  const [environments, setEnvironments] = useState([]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState('test');
 
-  // Mock data for the group table
-  const mockData = [
-    {
-      key: '1',
-      groupName: 'Test Group 1',
-      apis: [
-        { 
-          path: '/v2/config', 
-          method: 'POST',
-          directory: 'cc',
-          key: '1'
-        },
-        { 
-          path: '/v3/async/make-photo', 
-          method: 'POST',
-          directory: 'sdf',
-          key: '2'
+  useEffect(() => {
+    fetchGroupData();
+    const fetchEnvironments = async () => {
+      try {
+        const response = await getEnvironments();
+        if (response.environments) {
+          setEnvironments(response.environments);
+          // Set first environment as default if available
+          if (response.environments.length > 0) {
+            setSelectedEnvironment(response.environments[0].name);
+          }
         }
-      ],
-      environment: 'test'
-    },
-    {
-      key: '2',
-      groupName: 'Production APIs',
-      apis: [
-        { 
-          path: '/v2/config', 
-          method: 'GET',
-          directory: 'cc',
-          key: '3'
-        }
-      ],
-      environment: 'online'
+      } catch (error) {
+        console.error('Failed to fetch environments:', error);
+        message.error('Failed to fetch environments');
+      }
+    };
+    fetchEnvironments();
+  }, []);
+
+  const fetchGroupData = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllGroupedApis();
+      
+      // Transform the response data to match mock data structure
+      const transformedData = Object.entries(response).map(([groupName, apis], index) => ({
+        key: String(index + 1),
+        groupName: groupName,
+        apis: apis.map((api, apiIndex) => ({
+          key: String(apiIndex + 1),
+          path: api.api_path,
+          method: api.api_method,
+          directory: api.directory,
+          testcases_code: api.testcases_code,
+          // bussiness_code: api.bussiness_code,
+          // common_code: api.common_code,
+          // is_auto_test: api.is_auto_test,
+          // report_url: api.report_url,
+          // header_params: api.header_params,
+          // path_params: api.path_params,
+          // query_params: api.query_params,
+          // body_params: api.body_params,
+          // response_params: api.response_params,
+          // group: api.group,
+          // apiinfo: api.apiinfo,
+          // // Add any additional fields from apiinfo that might be needed
+          ...api.apiinfo
+        })),
+        environment: 'test' // default environment
+      }));
+
+      setGroupData(transformedData);
+    } catch (error) {
+      console.error('Error fetching group data:', error);
+      message.error('Failed to load group data');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleAddCase = (record) => {
     console.log('Add case for group:', record);
@@ -60,12 +98,54 @@ const GroupTable = ({ loading }) => {
     console.log('Run group:', record);
   };
 
-  const handleReport = (record) => {
-    console.log('Generate report for group:', record);
+  const handleReport = async (record) => {
+    try {
+      const response = await getGroups();
+      const group = response.find(g => g.name === record.groupName); // 判断group name所在url是否有值
+      
+      if (group && group.url) {
+        // Open the report URL in a new tab
+        window.open(group.url, '_blank');
+      } else {
+        message.info('No report URL available for this group');
+      }
+    } catch (error) {
+      console.error('Error fetching group report:', error);
+      message.error('Failed to get group report URL');
+    }
   };
 
-  const handleDelete = (record) => {
-    console.log('Delete group:', record);
+  const handleDelete = async (record) => {
+    try {
+      setDeleteLoading(prev => ({ ...prev, [record.key]: true }));
+      
+      // First, check if there are any APIs in the group
+      const groupApis = await getGroupApis(record.groupName);
+      
+      // If there are APIs, delete them from the group first
+      if (groupApis && groupApis.length > 0) {
+        for (const api of groupApis) {
+          await deleteApiFromGroup(
+            api.api_method,
+            api.api_path,
+            api.directory,
+            record.groupName
+          );
+        }
+      }
+      
+      // Then delete the group itself
+      await deleteGroup(record.groupName);
+      
+      message.success('Group deleted successfully');
+      // Refresh the group list
+      fetchGroupData();
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      message.error('Failed to delete group');
+    } finally {
+      setDeleteLoading(prev => ({ ...prev, [record.key]: false }));
+    }
   };
 
   const handleEnvironmentChange = (value, record) => {
@@ -111,13 +191,14 @@ const GroupTable = ({ loading }) => {
       key: 'environment',
       render: (env, record) => (
         <Select
-          value={env}
-          onChange={(value) => handleEnvironmentChange(value, record)}
-          style={{ width: 120 }}
+          value={selectedEnvironment}
+          onChange={setSelectedEnvironment}
+          style={{ width: 120, marginRight: 8 }}
+          placeholder="Environment"
         >
-          <Option value="test">Test</Option>
-          <Option value="pre">Pre</Option>
-          <Option value="online">Online</Option>
+          {environments.map(env => (
+            <Option key={env.name} value={env.name}>{env.name}</Option>
+          ))}
         </Select>
       ),
     },
@@ -159,6 +240,7 @@ const GroupTable = ({ loading }) => {
             type="primary"
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record)}
+            loading={deleteLoading[record.key]}
             size="small"
           >
             Delete
@@ -172,8 +254,8 @@ const GroupTable = ({ loading }) => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Table
         columns={columns}
-        dataSource={mockData}
-        loading={loading}
+        dataSource={groupData}
+        loading={loading || externalLoading}
         pagination={{
           pageSize: 10,
           showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
@@ -189,8 +271,10 @@ const GroupTable = ({ loading }) => {
         footer={null}
       >
         <GroupApiTable 
-          apis={selectedApis}
-          loading={false}
+          apis={selectedApis} 
+          loading={loading} 
+          groupName={selectedGroupName}
+          onReload={fetchGroupData}
         />
       </Modal>
     </div>
