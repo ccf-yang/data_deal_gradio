@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "rest_framework",  # Add Django REST framework
     "corsheaders",
     "savedapi",  # Add your app
+    "autoapi",
+    "environment",
 ]
 
 MIDDLEWARE = [
