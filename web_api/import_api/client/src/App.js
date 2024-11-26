@@ -12,15 +12,6 @@ import {
   CheckSquareOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
-<<<<<<< HEAD
-// import ApiTree from './components/ApiTree';
-import ApiDetail from './components/ApiDetail';
-import Toast from './components/Toast';
-import DirectoryModal from './components/DirectoryModal';
-// import ApiDirectory from './components/ApiDirectory';
-import DocumentView from './components/DocumentView';
-import ApiList from './components/ApiList';
-=======
 import { API_BASE_URL } from './config';
 import DirectoryModal from './components/DirectoryModal';
 import SavedApiTable from './components/SavedApiTable';
@@ -31,7 +22,6 @@ import AICasesTable from './components/AICasesTable';
 import FuncCasesTable from './components/FuncCasesTable';
 import FunctionTaskTable from './components/FunctionTaskTable';
 import { getSavedApis, saveApis, convertSwagger } from './api/savedApiService';
->>>>>>> 4cf345775d65c18d21daad6ae9e0dbdec0f34653
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
