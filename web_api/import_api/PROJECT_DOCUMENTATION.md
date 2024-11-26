@@ -1,4 +1,4 @@
-# API Documentation Viewer Project Documentation
+# Test platform Project Documentation
 
 ## Project Overview
 A web-based tool for importing, managing, and viewing API documentation with an intuitive, responsive interface.
