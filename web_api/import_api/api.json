@@ -1900,6 +1900,161 @@
       "tags": [
         "案例 API"
       ]
+    },
+    {
+      "path": "/v3/lcm-img2img",
+      "method": "POST",
+      "summary": "使用 lcm 进行图像到图像",
+      "description": "通过潜在一致性模型，图像生成速度提高 10 倍，通过几步推理即可合成高分辨率图像。您可以在这里获取指导：https://novita.ai/get-started/Basic_img2img.html#_5-img2img-request-with-lcm\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "model_name": {
+                  "type": "string",
+                  "description": "对于不同的稳定扩散模型，您使用提示得到的结果可能会有所不同。您可以调用 https://docs.novita.ai/models-api/query-model 端点来检索“sd_name_in_api”字段作为“model_name”。"
+                },
+                "input_image": {
+                  "type": "string",
+                  "description": "输入图像的base64，最大分辨率为2048 * 2048，最大文件大小为30 Mb，返回的图像将与输入图像的大小相同。"
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "涂鸦的正面提示词，用“，”分隔。范围：[1, 1024]"
+                },
+                "negative_prompt": {
+                  "type": "string",
+                  "description": "否定提示词，用“,”分隔，还可以添加“badhandv4_16755”等嵌入（文本反转）模型。"
+                },
+                "image_num": {
+                  "type": "integer",
+                  "description": "图像编号。范围：[1, 16]"
+                },
+                "sd_vae": {
+                  "type": "string",
+                  "description": "VAE(Variational Auto Encoder)，sd_vae 可以在端点 https://docs.novita.ai/models-api/query-model 中使用查询参数 'filter.types=vae' 访问，如 'sd_name': 'customVAE.safetensors '"
+                },
+                "loras": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model_name": {
+                        "type": "string"
+                      },
+                      "strenth": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "model_name",
+                      "strenth"
+                    ]
+                  },
+                  "description": "VAE(Variational Auto Encoder)，sd_vae 可以在端点 https://docs.novita.ai/models-api/query-model 中使用查询参数 'filter.types=vae' 访问，如 'sd_name': 'customVAE.safetensors '"
+                },
+                "embeddings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "model_name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "model_name"
+                    ]
+                  },
+                  "description": "文本反转选项，当前支持最多 5 个嵌入"
+                },
+                "steps": {
+                  "type": "integer",
+                  "description": "图像创建过程的迭代。范围：[1, 8]"
+                },
+                "guidance_scale": {
+                  "type": "integer",
+                  "description": "该设置表示模型将听取您的提示的程度，建议设置为 0。范围：[0, 30.0]"
+                },
+                "seed": {
+                  "type": "integer",
+                  "description": "请求的种子。"
+                },
+                "clip_skip": {
+                  "type": "integer",
+                  "description": "剪辑跳过，必须大于 0"
+                }
+              },
+              "required": [
+                "model_name",
+                "input_image",
+                "prompt",
+                "negative_prompt",
+                "image_num",
+                "sd_vae",
+                "steps",
+                "guidance_scale",
+                "seed"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "image_url": {
+                        "type": "string"
+                      },
+                      "image_url_ttl": {
+                        "type": "string"
+                      },
+                      "image_type": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "image_url",
+                      "image_url_ttl",
+                      "image_type"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "基础 API V3"
+      ]
     }
   ],
   "fdss": [
@@ -2162,6 +2317,85 @@
       },
       "tags": [
         "基本 API"
+      ]
+    }
+  ],
+  "config": [
+    {
+      "path": "/v2/config",
+      "method": "POST",
+      "summary": "配置s3配置",
+      "description": "该端点允许用户指定 S3 存储桶来存储他们的图像。用户可以灵活使用不同的键来映射到不同的存储桶。请将您的 AWS S3 存储桶策略配置更改为以下格式，您可以在这里获得指导：https://novita.ai/get-started/Account_account_and_key.html#_5-configure-s3-address 。 (将 {BucketName} 替换为真实的目标存储桶名称)：{'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'CanonicalUser':'e98cde8d11ec7c03ac08688f1a933b08b0f0f7746b21c4f2e7b2c8202cc0532f'},'Action':['s3:PutObject','s3:PutObjectAcl'],'Resource':'arn:aws:s3:::{BucketName}/*'}]}\n\n",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "Content-Type",
+          "in": "header",
+          "description": "",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "s3_region": {
+                  "type": "string",
+                  "description": "s3区域面积"
+                },
+                "s3_bucket": {
+                  "type": "string",
+                  "description": "s3桶"
+                },
+                "s3_path": {
+                  "type": "string",
+                  "description": "存储图像的 s3 路径"
+                }
+              },
+              "required": [
+                "s3_region",
+                "s3_bucket"
+              ]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "0代表成功，其他值代表失败"
+                  },
+                  "msg": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "账户接口"
       ]
     }
   ]

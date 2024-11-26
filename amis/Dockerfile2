@@ -1,0 +1,12 @@
+FROM qunyang95/npm_amis:v1
+
+# 设置工作目录
+WORKDIR /app
+# 设置环境变量
+ENV NODE_ENV=development
+# 设置npm镜像源为npmmirror
+RUN npm config set registry https://registry.npmmirror.com/ 
+# 暴露8888端口
+EXPOSE 8888
+# 启动项目
+CMD ["npm", "start"]
