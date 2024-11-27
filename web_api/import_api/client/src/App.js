@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Upload, Input, Button, message, Alert } from 'antd';
+import React, { useState } from 'react';
+import { Layout, Menu, message } from 'antd';
 import { 
-  UploadOutlined, 
-  LinkOutlined, 
   ImportOutlined, 
   SaveOutlined,
   GroupOutlined,
@@ -11,263 +9,20 @@ import {
   CodeOutlined,
   CheckSquareOutlined
 } from '@ant-design/icons';
-import axios from 'axios';
-import { API_BASE_URL } from './config';
-import DirectoryModal from './components/DirectoryModal';
-import SavedApiTable from './components/SavedApiTable';
-import ImportApiTable from './components/ImportApiTable';
-import GroupTable from './components/GroupTable';
-import EnvironmentTable from './components/EnvironmentTable';
-import AICasesTable from './components/AICasesTable';
-import FuncCasesTable from './components/FuncCasesTable';
-import FunctionTaskTable from './components/FunctionTaskTable';
-import { getSavedApis, saveApis, convertSwagger } from './api/savedApiService';
+import ImportApiIndex from './pages/apipage/import_api';
+import SavedApiIndex from './pages/apipage/saved_api';
+import GroupIndex from './pages/apipage/group';
+import EnvironmentIndex from './pages/apipage/environment';
+import AICasesIndex from './pages/functionpage/aicases';
+import FuncCasesIndex from './pages/functionpage/cases';
+import FunctionTaskIndex from './pages/functionpage/tasks';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
 
 function App() {
-  const [apis, setApis] = useState([]);
-  const [savedApis, setSavedApis] = useState([]);
-  const [selectedApi, setSelectedApi] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [urlInput, setUrlInput] = useState('');
   const [activeMenu, setActiveMenu] = useState('new');
-  const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
-  const [selectedApis, setSelectedApis] = useState([]);
-
-  useEffect(() => {
-    console.log('App.js: Initial mount');
-  }, []);
-
-  const showToast = (type, content) => {
-    messageApi[type](content);
-  };
-
-  const loadSavedApis = async () => {
-    console.log('=== START: Loading Saved APIs ===');
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const apisByDocument = await getSavedApis();
-      
-      // Transform the data structure while preserving document information
-      const processedApis = Object.entries(apisByDocument).flatMap(([document, documentApis]) => {
-        if (!Array.isArray(documentApis)) {
-          return [];
-        }
-        return documentApis.map(api => ({
-          ...api,
-          directory: document,
-          key: `${api.method}-${api.path}-${document}`
-        }));
-      });
-
-      setSavedApis(processedApis);
-      console.log('=== END: Loading Saved APIs ===');
-    } catch (error) {
-      console.error('Error loading saved APIs:', error);
-      setError('Failed to load saved APIs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileUpload = async (info) => {
-    const { file, onSuccess, onError } = info;
-    
-    try {
-      const result = await convertSwagger(file);
-      
-      // Ensure we have an array of APIs
-      const apiData = result.apis || result;
-      setApis(Array.isArray(apiData) ? apiData : [apiData]);
-      showToast('success', 'File uploaded successfully');
-      onSuccess('ok');
-    } catch (error) {
-      console.error('Upload error:', error);
-      showToast('error', `Upload failed: ${error.message}`);
-      onError(error);
-    }
-  };
-
-  const handleUrlImport = async () => {
-    if (!urlInput.trim()) {
-      showToast('error', 'Please enter a URL');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/convert-url`, { url: urlInput });
-      const apiData = response.data.apis || response.data;
-      setApis(Array.isArray(apiData) ? apiData : [apiData]);
-      showToast('success', 'API imported successfully');
-      setUrlInput('');
-    } catch (error) {
-      console.error('URL import error:', error);
-      showToast('error', `Import failed: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveSelected = async (selectedApis) => {
-    if (!selectedApis.length) {
-      showToast('warning', 'Please select APIs to save');
-      return;
-    }
-    setIsDirectoryModalOpen(true);
-    setSelectedApis(selectedApis);
-  };
-
-  const handleSaveApi = async (directory) => {
-    try {
-      await saveApis(selectedApis, directory);
-      showToast('success', 'APIs saved successfully');
-      setIsDirectoryModalOpen(false);
-      
-      // Reload saved APIs and switch to saved view
-      await loadSavedApis();
-      setActiveMenu('saved');
-    } catch (error) {
-      console.error('Save error:', error);
-      showToast('error', `Save failed: ${error.message}`);
-    }
-  };
-
-  const renderImportSection = () => {
-    return (
-      <div style={{ padding: '16px', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Upload.Dragger
-            customRequest={handleFileUpload}
-            showUploadList={false}
-            style={{ 
-              width: '180px',
-              margin: 0,
-              padding: '4px 8px',
-              background: '#fff',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UploadOutlined style={{ fontSize: '14px', color: '#1890ff' }} />
-              <span style={{ color: '#595959', fontSize: '14px', margin: 0, lineHeight: '1' }}>Upload File</span>
-            </div>
-          </Upload.Dragger>
-
-          <Input
-            placeholder="Enter API URL"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            prefix={<LinkOutlined style={{ color: '#1890ff' }} />}
-            style={{ 
-              width: '400px',
-              height: '40px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-            }}
-          />
-          
-          <Button
-            type="primary"
-            onClick={handleUrlImport}
-            loading={loading}
-            style={{
-              height: '40px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              background: 'linear-gradient(135deg, #1890ff 0%, #1677ff 100%)'
-            }}
-          >
-            Import from URL
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderContent = () => {
-    if (activeMenu === 'new') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          {renderImportSection()}
-          <div style={{ flex: 1, padding: '24px' }}>
-            <ImportApiTable 
-              apis={apis} 
-              loading={loading}
-              onSave={handleSaveSelected}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    if (activeMenu === 'saved') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          {error && <Alert message={error} type="error" style={{ marginBottom: '16px' }} />}
-          <div style={{ flex: 1, padding: '24px' }}>
-            <SavedApiTable 
-              apis={savedApis} 
-              loading={loading}
-              onReload={loadSavedApis}
-              onSelect={setSelectedApi}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    if (activeMenu === 'group') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <GroupTable loading={loading} />
-        </div>
-      );
-    }
-
-    if (activeMenu === 'environment') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <EnvironmentTable />
-        </div>
-      );
-    }
-
-    if (activeMenu === 'aicases') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <AICasesTable />
-        </div>
-      );
-    }
-
-    if (activeMenu === 'funccases') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <FuncCasesTable />
-        </div>
-      );
-    }
-
-    if (activeMenu === 'functask') {
-      return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <FunctionTaskTable />
-        </div>
-      );
-    }
-  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -288,12 +43,7 @@ function App() {
               borderRight: 0,
               background: 'transparent'
             }}
-            onClick={({ key }) => {
-              setActiveMenu(key);
-              if (key === 'saved') {
-                loadSavedApis();
-              }
-            }}
+            onClick={({ key }) => setActiveMenu(key)}
           >
             <Menu.Item 
               key="new" 
@@ -341,17 +91,44 @@ function App() {
         </Sider>
         <Layout style={{ padding: '0 24px 24px' }}>
           <Content style={{ background: '#fff', padding: 24, margin: 0, minHeight: 280 }}>
-            {renderContent()}
+            {activeMenu === 'new' && (
+              <ImportApiIndex />
+            )}
+            {activeMenu === 'saved' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <SavedApiIndex />
+              </div>
+            )}
+            {activeMenu === 'group' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <GroupIndex />
+              </div>
+            )}
+            {activeMenu === 'environment' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <EnvironmentIndex />
+              </div>
+            )}
+            {activeMenu === 'aicases' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <AICasesIndex />
+              </div>
+            )}
+            {activeMenu === 'funccases' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <FuncCasesIndex />
+              </div>
+            )}
+            {activeMenu === 'functask' && (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <FunctionTaskIndex />
+              </div>
+            )}
           </Content>
         </Layout>
       </Layout>
-      <DirectoryModal
-        open={isDirectoryModalOpen}
-        onClose={() => setIsDirectoryModalOpen(false)}
-        onSave={handleSaveApi}
-      />
     </Layout>
   );
-};
+}
 
 export default App;

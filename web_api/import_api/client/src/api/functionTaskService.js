@@ -10,7 +10,8 @@ export const createFunctionTask = async (taskData) => {
       name: taskData.name,
       assignedPerson: taskData.assignedPerson,
       cases: taskData.cases,
-      status: taskData.status
+      status: taskData.status,
+      deadline: taskData.deadline
     });
     return response.data;
   } catch (error) {
@@ -64,7 +65,8 @@ export const updateFunctionTask = async (taskData) => {
       name: taskData.name,
       assignedPerson: taskData.assignedPerson,
       cases: taskData.cases,
-      status: taskData.status
+      status: taskData.status,
+      deadline: taskData.deadline
     });
     return response.data;
   } catch (error) {

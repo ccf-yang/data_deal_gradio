@@ -1,0 +1,183 @@
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 12px 0 0;
+  height: 48px;
+  line-height: 48px;
+  background: #001529;  
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  z-index: 2;
+
+  :global(.ant-layout-header) {
+    background: transparent;
+    height: 48px;
+    line-height: 48px;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.85);  
+  }
+  // 修改全局ant-layout-header默认的样式用 :global(.ant-layout-header)
+
+  .right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .action {
+      cursor: pointer;
+      padding: 0 12px;
+      display: inline-block;
+      transition: all 0.3s;
+      height: 100%;
+      color: rgba(255, 255, 255, 0.85);  
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  .user {
+    .action {
+      cursor: pointer;
+      padding: 0 12px;
+      display: inline-block;
+      transition: all 0.3s;
+      height: 100%;
+      color: rgba(255, 255, 255, 0.85);  
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  .trigger {
+    cursor: pointer;
+    transition: all 0.3s, padding 0s;
+    padding: 0 12px;
+    color: rgba(255, 255, 255, 0.85);  
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+.notify {
+  width: 350px;
+  padding: 0;
+  background: #001529;  
+  color: rgba(255, 255, 255, 0.85);  
+
+  .item {
+    align-items: center;
+    cursor: pointer;
+    padding: 12px 24px;
+    color: rgba(255, 255, 255, 0.85);  
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .btn {
+    line-height: 46px;
+    text-align: center;
+    cursor: pointer;
+    border-top: 1px solid #e8e8e8;
+    color: rgba(255, 255, 255, 0.85);  
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+.notify :global(.ant-dropdown-menu-item:hover) {
+  background-color: #001529;  
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  overflow-y: scroll;
+  background: #001529;  
+  color: rgba(255, 255, 255, 0.85);  
+}
+
+.content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.sider {
+  height: 100%;
+  width: 208px;
+  min-height: 100vh;
+  box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
+  overflow: hidden;
+  background: #001529;  
+  color: rgba(255, 255, 255, 0.85);  
+
+  .menus {
+    overflow: auto;
+  }
+
+  .menus::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .logo {
+    height: 64px;
+    line-height: 64px;
+    overflow: hidden;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.85);  
+  }
+
+  .logo img {
+    height: 30px;
+  }
+
+  :global {
+    .ant-menu-sub.ant-menu-inline {
+      // 调整子菜单的缩进
+      .ant-menu-item {
+        padding-left: 60px !important;  // 增加左侧内边距
+        
+        // 可选：添加过渡效果
+        transition: padding-left 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+      }
+    }
+
+    // 确保子菜单项的图标对齐
+    .ant-menu-inline .ant-menu-item::after {
+      right: auto;
+      left: 0;
+    }
+  }
+}
+
+.footer {
+  width: 100%;
+  padding: 20px;
+  font-size: 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  background: #001529;  
+  color: rgba(255, 255, 255, 0.85);  
+
+  .links {
+    margin-bottom: 7px;
+
+    .item {
+      margin-right: 40px;
+      color: rgba(255, 255, 255, 0.85);  
+    }
+  }
+}
