@@ -79,14 +79,25 @@ ROOT_URLCONF = 'qa.urls'
 # WSGI应用对象
 WSGI_APPLICATION = 'qa.wsgi.application'
 
-# 数据库配置
+# mysql数据库配置
 DATABASES = {
     'default': {
-        'ATOMIC_REQUESTS': True,  # 每个请求作为一个原子操作
-        'ENGINE': 'django.db.backends.sqlite3',  # 数据库引擎
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # 数据库文件路径
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'qa_db',
+        'USER': 'qa_user',
+        'PASSWORD': 'qa_password',
+        'HOST': 'mysql',
+        'PORT': '3306',
     }
 }
+# 调试的sqlite3数据库配置
+# DATABASES = {
+#     'default': {
+#         'ATOMIC_REQUESTS': True,  # 每个请求作为一个原子操作
+#         'ENGINE': 'django.db.backends.sqlite3',  # 数据库引擎
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # 数据库文件路径
+#     }
+# }
 
 # 缓存设置
 CACHES = {

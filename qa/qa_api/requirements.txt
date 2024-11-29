@@ -11,3 +11,4 @@ user_agents==2.2.0
 attrs>=21.3.0
 sqlparse==0.4.4
 pyyaml==6.0.1
+mysqlclient==2.2.4
