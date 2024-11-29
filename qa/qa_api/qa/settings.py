@@ -15,7 +15,7 @@ SECRET_KEY = 'vk0do47)egwzz!uk49%(y3s(fpx4+hfdsfdsf23%323432'
 DEBUG = True
 
 # 允许的主机列表
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['*']  # 在开发环境中允许所有主机访问
 
 # CORS和安全设置
 CORS_ALLOW_ALL_ORIGINS = True  # 允许所有跨域请求
@@ -83,11 +83,15 @@ WSGI_APPLICATION = 'qa.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'qa_db',
-        'USER': 'qa_user',
-        'PASSWORD': 'qa_password',
-        'HOST': 'mysql',
+        'NAME': os.getenv('MYSQL_DATABASE', 'qa_db'),
+        'USER': os.getenv('MYSQL_USER', 'qa_user'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'qa_password'),
+        'HOST': os.getenv('MYSQL_HOST', 'mysql'),
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
     }
 }
 # 调试的sqlite3数据库配置

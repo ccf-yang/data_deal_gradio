@@ -87,40 +87,28 @@ def login(request):
     ).parse(request.body)
     
     if error is None:
-        # 创建处理登录记录的偏函数，将登录请求调用记录函数，记录到数据库
-        # partial返回的是一个新的函数对象，它将原函数的部分参数固定下来，形成一个新的函数。
-        # 在这里，handle_response 是一个新的函数，它已经预先绑定了 handle_login_record 的前三个参数：
-        # request, form.username, 和 form.type
-        # 
-        # 这样做的好处是：
-        # 1. 简化代码：后续调用 handle_response 时，只需要传入 error 参数（如果有的话）
-        # 2. 保持一致性：确保每次调用都使用相同的 request, username 和 type
-        # 3. 提高可读性：将通用的参数提前设置，使得代码更加清晰
-
-        # 使用示例：
-        # 原来可能需要这样调用：
-        # handle_login_record(request, form.username, form.type, error="Some error")
-
-        # 现在可以简化为：
-        # handle_response(error="Some error")
-
-        # 这样的设计使得错误处理更加统一和简洁
-        
+        print(f"登录请求：username={form.username}, type={form.type}")
         handle_response = partial(handle_login_record, request, form.username, form.type)
         
         # 查找用户
         user = User.objects.filter(username=form.username, type=form.type).first()
+        print(f"查找到用户：{user is not None}")
         
         # 检查用户是否被禁用
         if user and not user.is_active:
+            print("用户被禁用")
             return handle_response(error="账户已被系统禁用")
 
         if user and user.deleted_at is None:
+            print(f"验证密码：{form.password}")
             if user.verify_password(form.password):
+                print("密码验证成功")
                 return handle_user_info(handle_response, request, user)
+            print("密码验证失败")
 
         # 处理登录失败
         value = cache.get_or_set(form.username, 0, 86400)
+        print(f"登录失败次数：{value}")
         if value >= 3:
             # 禁用账户
             if user and user.is_active:

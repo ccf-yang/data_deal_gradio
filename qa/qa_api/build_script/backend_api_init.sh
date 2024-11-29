@@ -15,19 +15,17 @@ while ! nc -z $REDIS_HOST 6379; do
 done
 echo "Redis is ready!"
 
-cd ..
+# Make sure we're in the correct directory
+cd /app
 
 # Run migrations
-echo "Running makemigrations..."
-python manage.py makemigrations
+echo "Running makemigrations and migrate "
+python manage.py updatedb
 
-echo "Running migrations..."
-python manage.py migrate
+# Create superuser if not exists
+echo "Creating initial admin user..."
+python manage.py user add -u admin -p admin -n 管理员 -s || true
 
-# Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
-
-# Start server
+# Start the Django development server
 echo "Starting Django server..."
 python manage.py runserver 0.0.0.0:8000
