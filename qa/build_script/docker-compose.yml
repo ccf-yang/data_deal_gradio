@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  qa_web:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - qa_api
+    networks:
+      - qa_network
+
+  qa_api:
+    build:
+      context: ../qa_api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../qa_api:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=qa.settings
+      - MYSQL_DATABASE=qa_db
+      - MYSQL_USER=qa_user
+      - MYSQL_PASSWORD=qa_password
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - qa_network
+    command: sh /app/build/backend_api_init.sh
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=qa_db
+      - MYSQL_USER=qa_user
+      - MYSQL_PASSWORD=qa_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - ../data/mysql:/var/lib/mysql
+    networks:
+      - qa_network
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ../data/redis:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - qa_network
+
+networks:
+  qa_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
