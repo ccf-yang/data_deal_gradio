@@ -3,8 +3,8 @@ version: '2.2'
 services:
   qa_web:
     build:
-      context: ..
-      dockerfile: build/Dockerfile
+      context: ../qa_web
+      dockerfile: build_script/Dockerfile
     ports:
       - "80:80"
     depends_on:
@@ -15,7 +15,7 @@ services:
   qa_api:
     build:
       context: ../qa_api
-      dockerfile: Dockerfile
+      dockerfile: build_script/Dockerfile
     ports:
       - "8000:8000"
     volumes:

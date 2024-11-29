@@ -15,6 +15,8 @@ while ! nc -z $REDIS_HOST 6379; do
 done
 echo "Redis is ready!"
 
+cd ..
+
 # Run migrations
 echo "Running makemigrations..."
 python manage.py makemigrations

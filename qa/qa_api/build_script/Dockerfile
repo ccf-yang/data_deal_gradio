@@ -27,10 +27,10 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.doubanio.com/
 COPY . .
 
 # Make the entrypoint script executable
-RUN chmod +x /app/build/backend_api_init.sh
+RUN chmod +x /app/build_script/backend_api_init.sh
 
 # Expose port
 EXPOSE 8000
 
 # Set the entrypoint
-ENTRYPOINT ["sh", "/app/build/backend_api_init.sh"]
+ENTRYPOINT ["sh", "/app/build_script/backend_api_init.sh"]
