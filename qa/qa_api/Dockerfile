@@ -21,7 +21,7 @@ RUN apt-get update \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.doubanio.com/simple/
 
 # Copy project
 COPY . .
