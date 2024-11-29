@@ -4,11 +4,17 @@ FROM node:16-alpine as build
 # Set working directory
 WORKDIR /app
 
+# Set npm registry and other configurations to improve reliability
+RUN npm config set registry https://registry.npmmirror.com/ \
+    && npm config set fetch-retry-maxtimeout 600000 \
+    && npm config set fetch-timeout 600000 \
+    && npm config set strict-ssl false
+
 # Copy package files
 COPY ./package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
