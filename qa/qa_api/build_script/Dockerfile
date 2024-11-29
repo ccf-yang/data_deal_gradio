@@ -15,6 +15,7 @@ RUN apt-get update \
         python3-dev \
         default-libmysqlclient-dev \
         pkg-config \
+        netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file

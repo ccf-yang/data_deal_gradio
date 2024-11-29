@@ -4,8 +4,9 @@ FROM node:16-alpine as build
 # Set working directory
 WORKDIR /app
 
-# Set npm registry and other configurations to improve reliability
+# Update npm first and set configurations
 RUN npm config set registry https://registry.npmmirror.com/ \
+    && npm install -g npm@8.19.4 \
     && npm config set fetch-retry-maxtimeout 600000 \
     && npm config set fetch-timeout 600000 \
     && npm config set strict-ssl false
@@ -13,8 +14,8 @@ RUN npm config set registry https://registry.npmmirror.com/ \
 # Copy package files
 COPY ./package*.json ./
 
-# Install dependencies
-RUN npm install --legacy-peer-deps
+# Clean install without package-lock
+RUN rm -f package-lock.json && npm install
 
 # Copy source code
 COPY . .

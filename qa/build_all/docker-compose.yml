@@ -35,7 +35,7 @@ services:
     command: sh /app/build/backend_api_init.sh
 
   mysql:
-    image: mysql:8.0
+    image: mysql:5.7
     ports:
       - "3306:3306"
     environment:
@@ -58,6 +58,16 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - qa_network
+    # 添加这些行来创建日志目录
+    user: redis
+    volumes:
+      - ../data/redis:/data
+      - ../data/redis/log:/var/log/redis
+    # 确保容器启动前创建日志目录
+    entrypoint: >
+      sh -c "mkdir -p /var/log/redis &&
+             chown redis:redis /var/log/redis &&
+             redis-server /usr/local/etc/redis/redis.conf"
 
 networks:
   qa_network:
