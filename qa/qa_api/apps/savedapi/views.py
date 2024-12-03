@@ -158,6 +158,63 @@ class GetDirectoriesView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class ConvertSwaggerView(APIView):
+    def resolve_reference(self, ref_path, api_spec):
+        """Resolve $ref reference and return the actual schema"""
+        if not ref_path or not isinstance(ref_path, str) or not ref_path.startswith('#/'):
+            return {}
+        
+        try:
+            parts = ref_path[2:].split('/')
+            current = api_spec
+            
+            for part in parts:
+                if not isinstance(current, dict) or part not in current:
+                    return {}
+                current = current[part]
+            
+            # If the resolved schema also contains references, resolve them recursively
+            if isinstance(current, dict):
+                if '$ref' in current:  # Handle circular references
+                    new_ref = current['$ref']
+                    if new_ref != ref_path:  # Prevent infinite recursion
+                        return self.resolve_reference(new_ref, api_spec)
+                return self.resolve_schema_references(current, api_spec)
+            return current
+        except Exception as e:
+            print(f"Error resolving reference {ref_path}: {str(e)}")
+            return {}
+
+    def resolve_schema_references(self, schema, api_spec):
+        """Recursively resolve all references in a schema"""
+        if not isinstance(schema, dict):
+            return schema
+
+        resolved_schema = {}
+        try:
+            for key, value in schema.items():
+                if key == '$ref':
+                    # Merge the referenced schema with any existing properties
+                    referenced_schema = self.resolve_reference(value, api_spec)
+                    if referenced_schema:
+                        resolved_schema.update(referenced_schema)
+                    else:
+                        # If reference resolution fails, keep the original reference
+                        resolved_schema['$ref'] = value
+                elif isinstance(value, dict):
+                    resolved_schema[key] = self.resolve_schema_references(value, api_spec)
+                elif isinstance(value, list):
+                    resolved_schema[key] = [
+                        self.resolve_schema_references(item, api_spec) if isinstance(item, dict) else item
+                        for item in value
+                    ]
+                else:
+                    resolved_schema[key] = value
+        except Exception as e:
+            print(f"Error resolving schema: {str(e)}")
+            return schema  # Return original schema if resolution fails
+        
+        return resolved_schema
+
     def post(self, request):
         try:
             if 'file' not in request.FILES:
@@ -192,18 +249,19 @@ class ConvertSwaggerView(APIView):
                         # Handle request body
                         request_body = None
                         if spec.get('requestBody'):
-                            request_body = spec['requestBody']
+                            request_body = self.resolve_schema_references(spec['requestBody'], api_spec)
                         elif spec.get('parameters'):
                             body_param = next(
                                 (p for p in spec['parameters'] if p.get('in') == 'body'),
                                 None
                             )
                             if body_param:
+                                schema = self.resolve_schema_references(body_param.get('schema', {}), api_spec)
                                 request_body = {
                                     'required': body_param.get('required', False),
                                     'content': {
                                         'application/json': {
-                                            'schema': body_param.get('schema', {}),
+                                            'schema': schema,
                                             'example': body_param.get('example')
                                         }
                                     }
@@ -212,33 +270,46 @@ class ConvertSwaggerView(APIView):
                         # Handle responses
                         responses = {}
                         for code, response in spec.get('responses', {}).items():
+                            # Resolve any references in the response schema
+                            response_schema = None
+                            if response.get('schema'):
+                                response_schema = self.resolve_schema_references(response['schema'], api_spec)
+                            elif response.get('content', {}).get('application/json', {}).get('schema'):
+                                response_schema = self.resolve_schema_references(
+                                    response['content']['application/json']['schema'],
+                                    api_spec
+                                )
+
                             responses[code] = {
                                 'description': response.get('description', ''),
-                                'content': response.get('content') or {
+                                'content': {
                                     'application/json': {
-                                        'schema': response.get('schema'),
+                                        'schema': response_schema,
                                         'example': response.get('example')
                                     }
                                 }
                             }
+
+                        # Resolve parameter references
+                        parameters = []
+                        for p in spec.get('parameters', []):
+                            if p.get('in') != 'body':
+                                param_schema = self.resolve_schema_references(p.get('schema', {}), api_spec)
+                                parameters.append({
+                                    'name': p.get('name'),
+                                    'in': p.get('in'),
+                                    'description': p.get('description', ''),
+                                    'required': p.get('required', False),
+                                    'type': p.get('type') or param_schema.get('type', 'string'),
+                                    'schema': param_schema
+                                })
 
                         converted_apis.append({
                             'path': path,
                             'method': method.upper(),
                             'summary': spec.get('summary', ''),
                             'description': spec.get('description', ''),
-                            'parameters': [
-                                {
-                                    'name': p.get('name'),
-                                    'in': p.get('in'),
-                                    'description': p.get('description', ''),
-                                    'required': p.get('required', False),
-                                    'type': p.get('type') or p.get('schema', {}).get('type', 'string'),
-                                    'schema': p.get('schema')
-                                }
-                                for p in spec.get('parameters', [])
-                                if p.get('in') != 'body'
-                            ],
+                            'parameters': parameters,
                             'requestBody': request_body,
                             'responses': responses,
                             'tags': spec.get('tags', [])
@@ -249,10 +320,14 @@ class ConvertSwaggerView(APIView):
                 for item in api_spec['items']:
                     request_body = None
                     if item.get('request', {}).get('body'):
+                        body_schema = self.resolve_schema_references(
+                            item['request']['body'].get('schema', {}),
+                            api_spec
+                        )
                         request_body = {
                             'content': {
                                 'application/json': {
-                                    'schema': item['request']['body'].get('schema', {}),
+                                    'schema': body_schema,
                                     'example': item['request']['body'].get('example')
                                 }
                             }
@@ -261,11 +336,15 @@ class ConvertSwaggerView(APIView):
                     responses = {}
                     if item.get('response'):
                         for code, response in item['response'].items():
+                            response_schema = self.resolve_schema_references(
+                                response.get('schema', {}),
+                                api_spec
+                            )
                             responses[code] = {
                                 'description': response.get('description', ''),
                                 'content': {
                                     'application/json': {
-                                        'schema': response.get('schema', {}),
+                                        'schema': response_schema,
                                         'example': response.get('example')
                                     }
                                 }
