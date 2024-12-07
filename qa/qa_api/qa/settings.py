@@ -80,28 +80,28 @@ ROOT_URLCONF = 'qa.urls'
 WSGI_APPLICATION = 'qa.wsgi.application'
 
 # mysql数据库配置
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE', 'qa_db'),
-        'USER': os.getenv('MYSQL_USER', 'qa_user'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'qa_password'),
-        'HOST': os.getenv('MYSQL_HOST', 'mysql'),
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        }
-    }
-}
-# 调试的sqlite3数据库配置
 # DATABASES = {
 #     'default': {
-#         'ATOMIC_REQUESTS': True,  # 每个请求作为一个原子操作
-#         'ENGINE': 'django.db.backends.sqlite3',  # 数据库引擎
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # 数据库文件路径
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.getenv('MYSQL_DATABASE', 'qa_db'),
+#         'USER': os.getenv('MYSQL_USER', 'qa_user'),
+#         'PASSWORD': os.getenv('MYSQL_PASSWORD', 'qa_password'),
+#         'HOST': os.getenv('MYSQL_HOST', 'mysql'),
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         }
 #     }
 # }
+# 调试的sqlite3数据库配置
+DATABASES = {
+    'default': {
+        'ATOMIC_REQUESTS': True,  # 每个请求作为一个原子操作
+        'ENGINE': 'django.db.backends.sqlite3',  # 数据库引擎
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # 数据库文件路径
+    }
+}
 
 # 缓存设置
 CACHES = {
@@ -114,6 +114,16 @@ CACHES = {
         }
     }
 }
+# local using no password redis, docker run --name redis-local -p 6379:6379 -d redis:6.2-alpine           
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://localhost:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
 
 # Redis连接超时设置
 REDIS_TIMEOUT = 10

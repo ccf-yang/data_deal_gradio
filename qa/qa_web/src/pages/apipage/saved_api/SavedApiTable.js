@@ -28,6 +28,7 @@ const SavedApiTable = ({
   selectedEnvironment,
   autoStates,
   onAutoTestChange,
+  onDelete,
   selectedRowKeys,
   setSelectedRowKeys,
   currentPage,
@@ -40,56 +41,38 @@ const SavedApiTable = ({
   const [currentTestCasesCode, setCurrentTestCasesCode] = useState('');
   const pageSize = DEFAULT_PAGE_SIZE;
 
-  const handleDelete = async (record) => {
+  const handleDelete = (record) => {
+    // 把逻辑函数传过来，如果点击ok,就执行
     Modal.confirm({
       title: 'Delete API',
       content: `Are you sure you want to delete "${record.path}" from "${record.directory}"?`,
       okText: 'Yes',
       okType: 'danger',
       cancelText: 'No',
-      onOk: async () => {
-        try {
-          await removeApis([record], record.directory);
-
-          try {
-            const apiCode = await getApiCode({
-              api_method: record.method,
-              api_path: record.path,
-              directory: record.directory
-            });
-
-            if (apiCode) {
-              await deleteApiCode({
-                api_method: record.method,
-                api_path: record.path,
-                directory: record.directory
-              });
-            }
-          } catch (error) {
-            console.log('No API code found to delete');
-          }
-
-          message.success('API deleted successfully');
-          if (onReload) {
-            onReload();
-          }
-        } catch (error) {
-          console.error('Delete error:', error);
-          message.error(`Failed to delete API: ${error.message}`);
-        }
-      },
+      onOk: () => onDelete(record)
     });
   };
 
   const handleAddCase = async (record) => {
     try {
+      // 这里不返回头部，run的时候直接写头部
+      // record就是一个接口的情况[{method, path, directory...}],这样传过去，兼容group
+      // 把接口传给生成代码接口，获取bussinesscode 等，然后填充到下面去
+      // 把最终代码返回，格式为 {bussiness_code：, common_code：, testcases_code：}
+      const mock_req_data = {
+        bussiness_code: 'bussiness test',
+        common_code: 'common test',
+        testcases_code: 'testcases test 2'
+      };
+      
+      console.log('Adding API case:', {record});
       await addApiCodeWithoutGroup({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory,
-        bussiness_code: record.bussiness_code || '',
-        common_code: record.common_code || '',
-        testcases_code: record.testcases_code || '',
+        bussiness_code: mock_req_data.bussiness_code || '',
+        common_code: mock_req_data.common_code || '',
+        testcases_code: mock_req_data.testcases_code || '',
         is_auto_test: record.is_auto_test || false,
         report_url: record.report_url || '',
         header_params: record.header_params || '',
@@ -121,6 +104,7 @@ const SavedApiTable = ({
         directory: record.directory
       });
       setCurrentTestCasesCode(response.testcases_code);
+      setSelectedApi(record);  // 保存当前选中的 API
       setIsParamsModalVisible(true);
     } catch (error) {
       console.error('Failed to fetch API params:', error);
@@ -130,8 +114,45 @@ const SavedApiTable = ({
     }
   };
 
-  const handleRun = (record) => {
+  const handleRun = async (record) => {
     console.log('Run:', record);
+    // 获取到接口用例
+    try {
+      const response = await getApiCode({
+        api_method: record.method,
+        api_path: record.path,
+        directory: record.directory
+      });
+      console.log('接口用例:', response);
+      const data = {
+        groupname: '',
+        apis: [response],
+        environment: selectedEnvironment
+      };
+      console.log('data:', data);
+      // 将{groupname:'', apis:[response],“environment”:selectedEnvironment} 传给run接口，无报错，就返回OK
+      // run接口接收api列表，然后先生成头，循环生成每个case，如果case有内容为空，testcases生成处理为skip
+      // 然后异步调用命令执行，执行完成后，判断group是否空，是的话，将url地址写到report_url字段
+      const response2 = 'https://www.baidu.com'; //mock请求
+
+      // run端执行完成后的逻辑
+      const reqdata = {
+        api_method: record.method,
+        api_path: record.path,
+        directory: record.directory,
+        report_url: response2
+      };
+      await updateApiCode(reqdata);
+      message.success('Run success');
+      if (onReload) {
+        onReload();
+      }
+
+
+    } catch (error) {
+      console.error('Failed to fetch API params:', error);
+      message.error('请先点击Add Case!');
+    }
   };
 
   const handleReport = async (record) => {
@@ -153,22 +174,8 @@ const SavedApiTable = ({
     }
   };
 
-  const handleAutoTestChange = async (record, checked) => {
-    try {
-      await updateApiCode({
-        api_method: record.method,
-        api_path: record.path,
-        directory: record.directory,
-        is_auto_test: checked
-      });
-
-      if (onAutoTestChange) {
-        onAutoTestChange(record, checked);
-      }
-    } catch (error) {
-      console.error('Failed to update auto test status:', error);
-      message.error('Failed to update auto test status');
-    }
+  const handleAutoTestChange = (record, checked) => {
+    onAutoTestChange(record, checked);
   };
 
   const showApiDetail = (record) => {
@@ -187,6 +194,7 @@ const SavedApiTable = ({
   const handleParamsModalClose = () => {
     setIsParamsModalVisible(false);
     setCurrentTestCasesCode(null);
+    setSelectedApi(null);
   };
 
   const columns = [
@@ -214,6 +222,7 @@ const SavedApiTable = ({
       key: 'action',
       fixed: 'right',
       width: 500,
+      // 这里antd标准写法，每一行完整数据赋值到该行对应的record里面
       render: (_, record) => (
         <Space size="small">
           <Button 
@@ -322,10 +331,12 @@ const SavedApiTable = ({
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
 
-      <ParamsShowModal
+      <ParamsShowModal 
         visible={isParamsModalVisible}
         onClose={handleParamsModalClose}
         testcasesCode={currentTestCasesCode}
+        currentApi={selectedApi}
+        onReload={onReload}
       />
     </div>
   );

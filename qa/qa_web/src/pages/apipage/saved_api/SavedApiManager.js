@@ -12,6 +12,7 @@ import {
   addApiCodeWithGroup,
   getApiCode,
   updateApiCode,
+  deleteApiCode,
   getAllAutoTestStatus
 } from '../../../api/groupApiService';
 import { removeApis, getSavedApis } from '../../../api/savedApiService';
@@ -188,23 +189,55 @@ const SavedApiManager = () => {
 
   const handleAutoTestChange = async (record, checked) => {
     try {
-      await updateApiCode({
+      const response = await updateApiCode({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory,
         is_auto_test: checked
       });
 
-      setAutoStates(prev => ({
-        ...prev,
-        [record.key]: checked
-      }));
-
-      message.success(`Auto test ${checked ? 'enabled' : 'disabled'} successfully`);
-      loadSavedApis();
+      if (response.error === 'API not found') {
+        message.error('No API code found to update, please add case first');
+        setAutoStates(prev => ({
+          ...prev,
+          [record.key]: !checked
+        }));
+      } 
+      else {
+        setAutoStates(prev => ({
+          ...prev,
+          [record.key]: checked
+        }));
+      }
     } catch (error) {
       console.error('Failed to update auto test status:', error);
-      message.error('Failed to update auto test status');
+      message.error(error.message || 'Failed to update auto test status');
+    }
+  };
+
+  const handleDeleteApi = async (record) => {
+    try {
+      const apiCode = await getApiCode({
+        api_method: record.method,
+        api_path: record.path,
+        directory: record.directory
+      });
+
+      if (apiCode.error !== 'API not found') {
+        await deleteApiCode({
+          api_method: record.method,
+          api_path: record.path,
+          directory: record.directory
+        });
+        message.success('API deleted successfully');
+      } else {
+        message.error('No API code found to delete, please add case first');
+      }
+
+      loadSavedApis();
+    } catch (error) {
+      console.error('Failed to delete API:', error);
+      message.error(error.message || 'Failed to delete API');
     }
   };
 
@@ -321,7 +354,7 @@ const SavedApiManager = () => {
         selectedEnvironment={selectedEnvironment}
         autoStates={autoStates}
         onAutoTestChange={handleAutoTestChange}
-        onShowParams={handleShowParams}
+        onDelete={handleDeleteApi}
         selectedRowKeys={selectedRowKeys}
         setSelectedRowKeys={setSelectedRowKeys}
         currentPage={currentPage}

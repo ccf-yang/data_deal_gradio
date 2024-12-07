@@ -61,6 +61,13 @@ export const deleteGroup = async (groupName) => {
   });
 };
 
+export const updateGroup = async (groupName, url) => {
+  return await http.post('/api/autoapi/updategroup', {
+    name: groupName,
+    url: url
+  });
+};
+
 // Auto Test Status
 export const getAllAutoTestStatus = async () => {
   try {

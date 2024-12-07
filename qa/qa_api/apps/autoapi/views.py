@@ -64,10 +64,29 @@ class AddApiCodeWithoutGroupView(APIView):
         try:
             with transaction.atomic():
                 api_data = request.data
+                
+                # Check if API already exists with same method and path
+                existing_api = SavedApiCode.objects.filter(
+                    api_method=api_data['api_method'],
+                    api_path=api_data['api_path']
+                ).first()
+                
+                if existing_api:
+                    # Update existing API with new data
+                    for field in ['directory', 'bussiness_code', 'common_code', 'testcases_code',
+                                'is_auto_test', 'report_url', 'header_params', 'path_params',
+                                'query_params', 'body_params', 'response_params']:
+                        if field in api_data:
+                            setattr(existing_api, field, api_data.get(field, ''))
+                    
+                    existing_api.save()
+                    return Response({"message": "API updated successfully"}, status=status.HTTP_200_OK)
+                
+                # Create new API if it doesn't exist
                 api = SavedApiCode.objects.create(
                     api_method=api_data['api_method'],
                     api_path=api_data['api_path'],
-                    directory=api_data['directory'],
+                    directory=api_data.get('directory', ''),
                     bussiness_code=api_data.get('bussiness_code', ''),
                     common_code=api_data.get('common_code', ''),
                     testcases_code=api_data.get('testcases_code', ''),
@@ -161,16 +180,21 @@ class DeleteApiCodeView(APIView):
                 api_path = request.data.get('api_path')
                 directory = request.data.get('directory')
                 
-                api = SavedApiCode.objects.get(
+                # Check if API exists before attempting to delete
+                api = SavedApiCode.objects.filter(
                     api_method=api_method,
                     api_path=api_path,
                     directory=directory
-                )
+                ).first()
+                
+                if not api:
+                    return Response(
+                        {"error": "Please add the API case first before attempting to delete"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
                 
                 api.delete()
                 return Response({"message": "API deleted successfully"})
-        except ObjectDoesNotExist:
-            return Response({"error": "API not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

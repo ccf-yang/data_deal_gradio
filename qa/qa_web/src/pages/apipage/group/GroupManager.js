@@ -12,7 +12,9 @@ import {
   getGroups, 
   deleteGroup, 
   getGroupApis, 
-  deleteApiFromGroup 
+  getApiCode,
+  deleteApiFromGroup,
+  updateGroup
 } from '../../../api/groupApiService';
 import { getEnvironments } from '../../../api/environmentService';
 
@@ -78,22 +80,64 @@ const GroupManager = () => {
   }, []);
 
   const handleAddCase = (record) => {
+    // 这里只是检查整组用例是否都有用例
     console.log('Add case for group:', record);
+    for (const api of record.apis) {
+      if (!api.testcases_code) {
+        const api_name = `${api.method} ${api.path}`;
+        message.info(`请先在仓库给以下API添加用例: ${api_name}`);
+        return;
+      }
+    }
   };
 
-  const handleRun = (record) => {
+  const handleRun = async (record) => {
     console.log('Run group:', record);
+    const data = {
+      groupname: record.groupName,
+      apis: [],
+      environment: selectedEnvironment
+    };
+    for (const api of record.apis) {
+      const response = await getApiCode({
+        api_method: api.method,
+        api_path: api.path,
+        directory: api.directory
+      });
+      data.apis.push(response);
+    }
+    // structure {key: '1', groupName: '1', apis: [api], environment: 'test'}
+    // 将{groupname:name, apis:[response],"environment":selectedEnvironment} 传给run接口
+    
+    console.log('data:', data);
+    // 调用run接口，如果有报错，就返回error，没有报错，就返回OK
+    // run根据groupname将结果发送到group.url
+    const response = 'https://www.baidu.com'; //mock请求
+
+    // run端执行完成后到逻辑
+    await updateGroup(data.groupname, response);
+    const res = await getGroups();
+    for (const group of res) {
+      if (group.name === record.groupName) {
+        console.log(group);
+        break;
+      }
+    }
   };
 
   const handleReport = async (record) => {
     try {
-      const response = await getGroups();
-      const group = response.find(g => g.name === record.groupName);
-      
-      if (group && group.url) {
-        window.open(group.url, '_blank');
-      } else {
-        message.info('No report URL available for this group');
+      const res = await getGroups();
+      for (const group of res) {
+        if (group.name === record.groupName) {
+          if (group && group.url) {
+            console.log(group.url);
+            window.open(group.url, '_blank');
+          } else {
+            message.info('No report URL available for this group');
+          }
+          return;
+        }
       }
     } catch (error) {
       console.error('Error fetching group report:', error);
