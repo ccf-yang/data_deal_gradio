@@ -15,7 +15,8 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
   const [selectedApi, setSelectedApi] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isParamsModalVisible, setIsParamsModalVisible] = useState(false);
-  const [apiParams, setApiParams] = useState('');
+  const [currentTestCasesCode, setCurrentTestCasesCode] = useState(null);
+  const [selectedParamsApi, setSelectedParamsApi] = useState(null);
   const [paramsLoading, setParamsLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState({});
 
@@ -34,9 +35,18 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
     setSelectedApi(null);
   };
 
-  const handleParamsModalClose = () => {
+  const handleModalCancel = () => {
     setIsParamsModalVisible(false);
-    setApiParams(null);
+    setSelectedParamsApi(null);
+    setCurrentTestCasesCode(null);
+  };
+
+  const handleModalSuccess = () => {
+    message.success('Parameters updated successfully');
+    setIsParamsModalVisible(false);
+    if (onReload) {
+      onReload();
+    }
   };
 
   const handleDelete = async (record) => {
@@ -71,19 +81,27 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
 
   const handleParamShow = async (record) => {
     try {
-      setParamsLoading(true);
+      setIsParamsModalVisible(true);
+      setSelectedParamsApi(record);
+      
       const response = await getApiCode({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory
       });
-      setApiParams(response.bussiness_code);
-      setIsParamsModalVisible(true);
+      
+      let parsedParams;
+      try {
+        parsedParams = JSON.parse(response.body_params);
+      } catch (parseError) {
+        parsedParams = response.body_params;
+      }
+      
+      setCurrentTestCasesCode(parsedParams);
     } catch (error) {
       console.error('Failed to fetch API params:', error);
       message.error('请先点击Add Case!');
-    } finally {
-      setParamsLoading(false);
+      setIsParamsModalVisible(false);
     }
   };
 
@@ -129,7 +147,6 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
             type="default"
             icon={<CodeOutlined />}
             onClick={() => handleParamShow(record)}
-            loading={paramsLoading}
             size="small"
             style={{ color: '#722ed1', borderColor: '#722ed1' }}
           >
@@ -162,6 +179,7 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
           showSizeChanger: false
         }}
       />
+      
       <Modal
         title="API Details"
         visible={isModalVisible}
@@ -172,11 +190,15 @@ const GroupApiTable = ({ apis: initialApis, loading, groupName, onReload }) => {
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
       
-      <ParamsShowModal
-        visible={isParamsModalVisible}
-        onClose={handleParamsModalClose}
-        testcasesCode={apiParams}
-      />
+      {isParamsModalVisible && (
+        <ParamsShowModal
+          visible={isParamsModalVisible}
+          onCancel={handleModalCancel}
+          onSuccess={handleModalSuccess}
+          currentApi={selectedParamsApi}
+          testCasesCode={currentTestCasesCode}
+        />
+      )}
     </>
   );
 };

@@ -38,11 +38,10 @@ const SavedApiTable = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isParamsModalVisible, setIsParamsModalVisible] = useState(false);
   const [paramsLoading, setParamsLoading] = useState(false);
-  const [currentTestCasesCode, setCurrentTestCasesCode] = useState('');
+  const [currentTestCasesCode, setCurrentTestCasesCode] = useState(null);
   const pageSize = DEFAULT_PAGE_SIZE;
 
   const handleDelete = (record) => {
-    // 把逻辑函数传过来，如果点击ok,就执行
     Modal.confirm({
       title: 'Delete API',
       content: `Are you sure you want to delete "${record.path}" from "${record.directory}"?`,
@@ -58,14 +57,37 @@ const SavedApiTable = ({
       // 这里不返回头部，run的时候直接写头部
       // record就是一个接口的情况[{method, path, directory...}],这样传过去，兼容group
       // 把接口传给生成代码接口，获取bussinesscode 等，然后填充到下面去
-      // 把最终代码返回，格式为 {bussiness_code：, common_code：, testcases_code：}
+      // 把最终代码返回，格式为 {bussiness_code：, common_code：, testcases_code：,body_params：}, body_params实际代表参数的json
       const mock_req_data = {
         bussiness_code: 'bussiness test',
         common_code: 'common test',
-        testcases_code: 'testcases test 2'
+        testcases_code: 'testcases test 2',
+        body_params: {
+          "get_/api/register": {
+            "all_value_correct": [
+              {"apiname":"name","type":"string","value":"test"},
+              {"apiname":"email","type":"string","value":"test@qq.com"},
+              {"apiname":"password","type":"string","value":"123456"}
+            ],
+            "name_error": [
+              {"apiname":"name","type":"string","value":12},
+              {"apiname":"email","type":"string","value":"test@qq.com"},
+              {"apiname":"password","type":"string","value":"123456"}
+            ],
+            "email_error": [
+              {"apiname":"name","type":"string","value":"test"},
+              {"apiname":"email","type":"string","value":213},
+              {"apiname":"password","type":"string","value":"123456"}
+            ],
+            "password_error": [
+              {"apiname":"name","type":"string","value":"test"},
+              {"apiname":"email","type":"string","value":"test@qq.com"},
+              {"apiname":"password","type":"string","value":123456}
+            ]
+          }
+        }
       };
       
-      console.log('Adding API case:', {record});
       await addApiCodeWithoutGroup({
         api_method: record.method,
         api_path: record.path,
@@ -78,7 +100,7 @@ const SavedApiTable = ({
         header_params: record.header_params || '',
         path_params: record.path_params || '',
         query_params: record.query_params || '',
-        body_params: record.body_params || '',
+        body_params: JSON.stringify(mock_req_data.body_params) || '',
         response_params: record.response_params || ''
       });
       message.success('Case added successfully');
@@ -97,39 +119,55 @@ const SavedApiTable = ({
 
   const handleParamShow = async (record) => {
     try {
-      setParamsLoading(true);
+      setIsParamsModalVisible(true);  // 先设置为可见
+      
       const response = await getApiCode({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory
       });
-      setCurrentTestCasesCode(response.testcases_code);
-      setSelectedApi(record);  // 保存当前选中的 API
-      setIsParamsModalVisible(true);
+      
+      let parsedParams;
+      try {
+        parsedParams = JSON.parse(response.body_params);
+      } catch (parseError) {
+        parsedParams = response.body_params;
+      }
+      
+      setSelectedApi({...record});  // 使用展开运算符创建新对象
+      setCurrentTestCasesCode(parsedParams);
     } catch (error) {
-      console.error('Failed to fetch API params:', error);
-      message.error('请先点击Add Case!');
-    } finally {
-      setParamsLoading(false);
+      message.error('Failed to fetch API parameters');
+      setIsParamsModalVisible(false);
     }
+  };
+
+  const handleModalCancel = () => {
+    setIsParamsModalVisible(false);
+    setSelectedApi(null);
+    setCurrentTestCasesCode(null);
+  };
+
+  const handleModalSuccess = () => {
+    message.success('Parameters updated successfully');
+    setIsParamsModalVisible(false);
   };
 
   const handleRun = async (record) => {
     console.log('Run:', record);
-    // 获取到接口用例
     try {
       const response = await getApiCode({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory
       });
-      console.log('接口用例:', response);
       const data = {
         groupname: '',
         apis: [response],
         environment: selectedEnvironment
       };
       console.log('data:', data);
+      // 在接口里面读取json和代码，这里只进行拼装代码就好了。
       // 将{groupname:'', apis:[response],“environment”:selectedEnvironment} 传给run接口，无报错，就返回OK
       // run接口接收api列表，然后先生成头，循环生成每个case，如果case有内容为空，testcases生成处理为skip
       // 然后异步调用命令执行，执行完成后，判断group是否空，是的话，将url地址写到report_url字段
@@ -147,8 +185,6 @@ const SavedApiTable = ({
       if (onReload) {
         onReload();
       }
-
-
     } catch (error) {
       console.error('Failed to fetch API params:', error);
       message.error('请先点击Add Case!');
@@ -188,12 +224,6 @@ const SavedApiTable = ({
 
   const handleModalClose = () => {
     setIsModalVisible(false);
-    setSelectedApi(null);
-  };
-
-  const handleParamsModalClose = () => {
-    setIsParamsModalVisible(false);
-    setCurrentTestCasesCode(null);
     setSelectedApi(null);
   };
 
@@ -331,13 +361,15 @@ const SavedApiTable = ({
         {selectedApi && <ApiDetailView api={selectedApi} />}
       </Modal>
 
-      <ParamsShowModal 
-        visible={isParamsModalVisible}
-        onClose={handleParamsModalClose}
-        testcasesCode={currentTestCasesCode}
-        currentApi={selectedApi}
-        onReload={onReload}
-      />
+      {isParamsModalVisible && (
+        <ParamsShowModal
+          visible={isParamsModalVisible}
+          onCancel={handleModalCancel}
+          onSuccess={handleModalSuccess}
+          currentApi={selectedApi}
+          testCasesCode={currentTestCasesCode}
+        />
+      )}
     </div>
   );
 };

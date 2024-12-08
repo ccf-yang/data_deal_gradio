@@ -1,0 +1,25 @@
+[
+    {"get_/api/register":{
+        "all_value_correct":[
+            {"apiname":"name","type":"string","value":"test"},
+            {"apiname":"email","type":"string","value":"test@qq.com"},
+            {"apiname":"password","type":"string","value":"123456"}
+        ],
+        "name_error":[
+            {"apiname":"name","type":"string","value":12},
+            {"apiname":"email","type":"string","value":"test@qq.com"},
+            {"apiname":"password","type":"string","value":"123456"}
+        ],
+        "email_error":[
+            {"apiname":"name","type":"string","value":"test"},
+            {"apiname":"email","type":"string","value":213},
+            {"apiname":"password","type":"string","value":"123456"}
+        ],
+        "password_error":[
+            {"apiname":"name","type":"string","value":"test"},
+            {"apiname":"email","type":"string","value":"test@qq.com"},
+            {"apiname":"password","type":"string","value":123456}
+        ]
+    }
+    }
+]

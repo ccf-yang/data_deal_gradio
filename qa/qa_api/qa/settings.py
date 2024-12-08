@@ -104,26 +104,26 @@ DATABASES = {
 }
 
 # 缓存设置
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://192.168.71.161:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "PASSWORD": "jhkdjhkjdhsIUTYURTU_8HajfJ",
-        }
-    }
-}
-# local using no password redis, docker run --name redis-local -p 6379:6379 -d redis:6.2-alpine           
 # CACHES = {
 #     "default": {
 #         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://localhost:6379/1",
+#         "LOCATION": "redis://192.168.71.161:6379/1",
 #         "OPTIONS": {
 #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#             "PASSWORD": "jhkdjhkjdhsIUTYURTU_8HajfJ",
 #         }
 #     }
 # }
+# local using no password redis, docker run -it --rm --name redis-local -p 6379:6379  redis:6.2-alpine           
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://localhost:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 # Redis连接超时设置
 REDIS_TIMEOUT = 10

@@ -110,7 +110,7 @@ const GroupManager = () => {
     // 将{groupname:name, apis:[response],"environment":selectedEnvironment} 传给run接口
     
     console.log('data:', data);
-    // 调用run接口，如果有报错，就返回error，没有报错，就返回OK
+    // 调用run接口，拼接代码执行，如果有报错，就返回error，没有报错，就返回OK
     // run根据groupname将结果发送到group.url
     const response = 'https://www.baidu.com'; //mock请求
 
