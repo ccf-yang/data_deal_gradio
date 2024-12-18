@@ -2,11 +2,7 @@ import copy
 import os
 from common.StringHandle import StringHandle
 import json
-from ruamel import yaml
 from configparser import ConfigParser
-import pandas
-import openpyxl
-from bs4 import BeautifulSoup
 import time
 import socket
 import logging
@@ -32,19 +28,6 @@ class FileAction(object):
         data_path = os.path.join(curr_project_dir, join_data_path)
         file_all_path = os.path.join(data_path, abs_file)
         return file_all_path
-
-    def com_yaml_to_json(self, file_abs_path):
-        """
-
-        :param file_abs_path:
-        :return:
-        """
-        yaml_all_path = self.com_get_file_all_path(file_abs_path)
-        with open(yaml_all_path, 'r', encoding='utf-8') as y_file:
-            yaml_content = yaml.load(y_file, Loader=yaml.RoundTripLoader)
-            yaml_str = json.dumps(yaml_content, ensure_ascii=False)
-            yaml_json = StringHandle().com_convert_str_to_json(yaml_str)
-        return yaml_json
 
     def read_config(self, file_path: str = "config.ini"):
         """
@@ -135,56 +118,6 @@ class FileAction(object):
         else:
             raise ValueError("http请求的返回的status code是: {}, 不是200".format(resp.response.status_code))
 
-    def com_read_excel(self, file_path, test_data="testdata"):
-        """
-        读取excel内容，转为json
-        :param file_path:
-        :param test_data:
-        :return:
-        """
-        all_file_path = self.com_get_file_all_path(file_path, test_data)
-        read_content = pandas.read_excel(all_file_path)
-        return StringHandle().com_convert_str_to_json(read_content.to_json())
-
-    def com_read_excel_by_openpyxl(self, file_path, test_data="testdata"):
-        """
-        使用openxlpy读取excel数据
-        :param file_path:
-        :param test_data:
-        :return:
-        """
-        all_file_path = self.com_get_file_all_path(file_path, test_data)
-        wb = openpyxl.load_workbook(all_file_path)
-        sheets = wb["Sheet1"]
-        sheets = wb.active
-        print(" openpyxl read excel file_name:  {} ".format(file_path.split("/")[-1]).center(100, "*"))
-        max_row = sheets.max_row
-        max_col = sheets.max_column
-
-        # 所有行的数据
-        all_row_data = []
-        for i in range(max_row):
-            list_row = list(sheets.rows)[i]
-            one_row = []
-            for cell in list_row:
-                one_row.append(cell.value)
-            all_row_data.append(one_row)
-
-        # 所有列的数据
-        all_col_data = []
-        for j in range(max_col):
-            list_col = list(sheets.columns)[j]
-            one_col = []
-            for cell in list_col:
-                one_col.append(cell.value)
-            new_one_col = []
-            all_col_data.append(one_col)
-
-        return {
-            "all_rows": all_row_data,
-            "all_cols": all_col_data
-        }
-
     def com_read_json_file(self, file_path, test_data='testdata'):
         """
 
@@ -213,22 +146,6 @@ class FileAction(object):
             })
             json.dump(_copy, w)
 
-    def com_update_html_file(self, abs_file_path):
-        """
-
-        :param file_path:
-        :param test_data:
-        :return:
-        """
-        # all_file_path = self.com_get_file_all_path(file_path, join_data_path=test_data)
-
-        with open(abs_file_path, 'r') as f:
-            html_con = f.read()
-            file_con = BeautifulSoup(html_con)
-            file_con.title.string.replace_with("XXXXXXXXXX123XXXX")
-            print(file_con.prettify())
-            after_update = file_con.prettify()
-            return after_update
 
     def com_add_data_to_html(self, abs_file_path, add_data):
         """

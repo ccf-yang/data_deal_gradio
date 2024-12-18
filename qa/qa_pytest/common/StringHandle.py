@@ -38,7 +38,7 @@ class StringHandle(object):
 
         :return: 转为json格式后的内容
         """
-        if value is '':
+        if not value:
             raise ValueError("String is Empty, Can't convert to json")
         if isinstance(value, bytes):
             value = value.decode('utf-8')

@@ -13,7 +13,7 @@ headers = {
     'Content-Type': 'application/json',
     'X-Token': '161b91c7818c4699bb700c0e9551cd98'
     }
-django_host = 'http://127.0.0.1:3000'
+django_host = 'http://192.168.71.145:3000'
 
 def update_apireporturl(report_url,api_mark):
     url = f"{django_host}/api/autoapi/updateapicode"
