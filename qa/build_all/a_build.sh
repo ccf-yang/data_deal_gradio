@@ -7,6 +7,12 @@ if [ "$operate" == "start" ]; then
     docker-compose up -d --build
     #up pytest
     cd ../qa_pytest
+    # 检查基础镜像是否存在
+    if [[ "$(docker images -q qa-pytest-base:latest 2> /dev/null)" == "" ]]; then
+        echo "基础镜像不存在，开始构建基础镜像..."
+        docker build -t qa-pytest-base:latest -f Dockerfile.base .
+    fi
+    # 构建主镜像
     docker-compose up -d --build
 elif [ "$operate" == "stop" ]; then
     # down api and web

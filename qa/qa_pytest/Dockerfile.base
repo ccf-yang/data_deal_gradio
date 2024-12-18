@@ -1,0 +1,21 @@
+FROM python:3.9-slim
+
+# 更换所有apt源为阿里源
+RUN rm -rf /etc/apt/sources.list.d/* && \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm main non-free contrib" > /etc/apt/sources.list && \
+    echo "deb-src https://mirrors.aliyun.com/debian/ bookworm main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian-security/ bookworm-security main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb-src https://mirrors.aliyun.com/debian-security/ bookworm-security main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm-updates main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb-src https://mirrors.aliyun.com/debian/ bookworm-updates main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm-backports main non-free contrib" >> /etc/apt/sources.list && \
+    echo "deb-src https://mirrors.aliyun.com/debian/ bookworm-backports main non-free contrib" >> /etc/apt/sources.list
+
+# 安装allure和其他依赖
+RUN apt-get update && \
+    apt-get -y install wget default-jre && \
+    wget http://112.64.155.148:9998/directlink/1/auto/allure_2.32.0-1_all.deb && \
+    dpkg -i allure_2.32.0-1_all.deb && \
+    rm allure_2.32.0-1_all.deb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*

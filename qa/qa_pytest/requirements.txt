@@ -9,3 +9,4 @@ Requests==2.32.3
 six==1.15.0
 urllib3==1.26.4
 uvicorn==0.34.0
+allure-pytest==2.13.5
