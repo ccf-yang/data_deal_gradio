@@ -22,8 +22,8 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install necessary Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# Install necessary Python packages and allure
+RUN pip install --no-cache-dir -r requirements.txt && dpkg -i /app/utils/allure_2.32.0-1_all.deb
 
 EXPOSE 4567
 # Command to run your application

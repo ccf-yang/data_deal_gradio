@@ -8,11 +8,9 @@ import os
 from dataclasses import dataclass
 import requests
 import subprocess
-import psutil
 from typing import Dict
-import multiprocessing
 import time
-
+import atexit
 cur_project_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, cur_project_path)
 print(cur_project_path)
@@ -48,7 +46,6 @@ def getapilist(path,method):
     data = json.loads(response.text)
     for _, apis in data.items():
         for api in apis:
-            # print(api)
             if api["path"] == path and api["method"] == method.upper():
                 return api
     return {}
@@ -178,40 +175,55 @@ def write_apis(apis):
 
 #----------后台运行任务-------------
 # 用于存储正在运行的进程信息
-running_processes: Dict[str, psutil.Process] = {}
+running_processes: Dict[str, subprocess.Popen] = {}
+def cleanup_processes():
+    """清理所有运行的进程"""
+    for process in running_processes.values():
+        try:
+            process.kill()
+        except:
+            pass
+# 注册退出时的清理函数
+atexit.register(cleanup_processes) # 添加了进程清理机制，使用 atexit 在程序退出时清理所有进程
 
 def run_long_task(command: str):
     """执行长时间运行的任务"""
     try:
-        # 使用 nohup 来运行命令，确保在后台持续运行
-        # 将输出重定向到日志文件
-        with open(os.path.join(cur_project_path, 'task.log'), "a") as log_file:
+        if os.name == 'nt':
             process = subprocess.Popen(
-                f"nohup {command} &",
+                command,
                 shell=True,
-                stdout=log_file,
-                stderr=log_file,
-                creationflags=subprocess.CREATE_NEW_CONSOLE  # Optional: run in a new console
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                start_new_session=True,  # 创建新的进程组
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # Windows系统使用
             )
-        return process.pid
+        else:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                start_new_session=True
+            )
+            
+        return process
     except Exception as e:
         print(f"Error running task: {e}")
         return None
 
-def start_background_process(command: str, process_name: str):
-    """启动后台进程"""
-    # 创建新进程
-    process = multiprocessing.Process(
-        target=run_long_task,
-        args=(command,)
-    )
-    # 设置为守护进程
-    process.daemon = True
-    # 启动进程
-    process.start()
-    # 记录进程信息
-    running_processes[process_name] = psutil.Process(process.pid)
-    return process.pid
+def is_process_running(process_name: str) -> bool:
+    """检查进程是否在运行"""
+    if process_name in running_processes:
+        process = running_processes[process_name]
+        if process.poll() is None:  # 进程仍在运行
+            return True
+        else:  # 进程已结束，清理
+            del running_processes[process_name]
+    return False
+
 
 #-----------------------
 @app.post("/run")
@@ -220,35 +232,30 @@ async def run_api(con: RunInfo):
         environment = con.environment
         apis = con.apis
         groupname = con.groupname
-        # 异步执行代码，成功运行就返回
         process_name = "my_pytest_task"
+
         # 检查是否已有相同任务在运行
-        if process_name in running_processes:
-            try:
-                process = running_processes[process_name]
-                if process.is_running():
-                    return {"message": "Task is already running", "pid": process.pid}
-            except psutil.NoSuchProcess:
-                del running_processes[process_name]
+        if is_process_running(process_name):
+            return {
+                "message": "Task is already running",
+                "code": 200
+            }
 
         # 写环境变量到文件中
         write_env(environment)
         # 写apis代码到测试代码中
         api_mark = write_apis(apis)
-        if groupname:
-            groupname = groupname
-        else:
-            groupname = "null"
+        groupname = groupname if groupname else "null"
 
         random_suffix = time.strftime('%Y_%m_%d_%H_%M_%S')
         command = f'python utils/run_case.py --run --time {str(random_suffix)} --groupname {groupname} --api {api_mark}'
+        
         # 启动后台进程
-        print(command)
-        pid = start_background_process(command, process_name)
-        if pid:
+        process = run_long_task(command)
+        if process:
+            running_processes[process_name] = process
             return {
                 "message": "Task started successfully",
-                "pid": pid,
                 "code": 200
             }
         else:
@@ -258,8 +265,55 @@ async def run_api(con: RunInfo):
         print(f"Error running task: {e}")
         return {
             "message": "Failed to start task",
-            "error": str(e)
+            "error": str(e),
+            "code": 500
         }
+# @app.post("/run")
+# async def run_api(con: RunInfo):
+#     try:
+#         environment = con.environment
+#         apis = con.apis
+#         groupname = con.groupname
+#         # 异步执行代码，成功运行就返回
+#         process_name = "my_pytest_task"
+#         # 检查是否已有相同任务在运行
+#         if process_name in running_processes:
+#             try:
+#                 process = running_processes[process_name]
+#                 if process.is_running():
+#                     return {"message": "Task is already running", "pid": process.pid}
+#             except psutil.NoSuchProcess:
+#                 del running_processes[process_name]
+
+#         # 写环境变量到文件中
+#         write_env(environment)
+#         # 写apis代码到测试代码中
+#         api_mark = write_apis(apis)
+#         if groupname:
+#             groupname = groupname
+#         else:
+#             groupname = "null"
+
+#         random_suffix = time.strftime('%Y_%m_%d_%H_%M_%S')
+#         command = f'python utils/run_case.py --run --time {str(random_suffix)} --groupname {groupname} --api {api_mark}'
+#         # 启动后台进程
+#         print(command)
+#         pid = start_background_process(command, process_name)
+#         if pid:
+#             return {
+#                 "message": "Task started successfully",
+#                 "pid": pid,
+#                 "code": 200
+#             }
+#         else:
+#             raise HTTPException(status_code=500, detail="Failed to start task")
+
+#     except Exception as e:
+#         print(f"Error running task: {e}")
+#         return {
+#             "message": "Failed to start task",
+#             "error": str(e)
+#         }
 
 if __name__ == "__main__":
     uvicorn.run("auto_api_for_platform:app", host="0.0.0.0", port=4567)

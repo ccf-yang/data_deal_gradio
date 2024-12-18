@@ -96,9 +96,10 @@ def generate_allure_report(random_suffix):
     """
     allure_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
                             'results', random_suffix)
+    allure_report_path =allure_path + "_report"
     if not os.path.exists(allure_path):
         os.mkdir(allure_path)
-    cmd = f'allure generate {allure_path} -o {allure_path} -c {allure_path}'
+    cmd = f'allure generate {allure_path} -o {allure_report_path} -c {allure_path}'
     try:
         subprocess.run(cmd, shell=True, check=True)
         print("Allure report generated successfully, path: ", allure_path)
