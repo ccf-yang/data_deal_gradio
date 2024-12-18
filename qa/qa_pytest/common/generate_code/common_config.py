@@ -12,9 +12,9 @@ funcfilenameclass = 'CommonClassName'  # common文件中的类名
 testcasefilenameclass = 'Test_Testcases_ClassName'  # testcases文件中的类名
 
 cur_project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-apidir = os.path.join(cur_project_path, r'business\auto')  # 生成的api 相应business存放目录
-funcdir = os.path.join(cur_project_path, r'common\auto')  # 生成的func common文件存放目录
-casesdir =os.path.join(cur_project_path,  r'testcases\test_auto_cases')  # 生成的testcases存放目录
+apidir = os.path.join(cur_project_path, 'business','auto')  # 生成的api 相应business存放目录
+funcdir = os.path.join(cur_project_path,'common','auto')  # 生成的func common文件存放目录
+casesdir =os.path.join(cur_project_path, 'testcases','test_auto_cases')  # 生成的testcases存放目录
 
 api_file_path = os.path.join(apidir, apifilename + '.py')
 func_file_path = os.path.join(funcdir, funcfilename + '.py')

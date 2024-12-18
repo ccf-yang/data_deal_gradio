@@ -97,7 +97,7 @@ async def save_info(con: RequestApiContent):
 
 def write_env(environment):
     # 写环境变量到文件中
-    filepath = os.path.join(cur_project_path, "testdata/api_params.json")
+    filepath = os.path.join(cur_project_path, "testdata", "api_params.json")
     if not os.path.exists(filepath):
         raise FileNotFoundError("文件: {} 未找到".format(filepath))
     with open(filepath, "r", encoding="utf-8") as f:
@@ -141,7 +141,7 @@ def write_testcase(type="",code=''):
             f.write(code)
 
 def write_params_json(params):
-    with open(os.path.join(cur_project_path, 'variables/params.json'), "w", encoding='utf-8') as f:
+    with open(os.path.join(cur_project_path, 'variables', 'params.json'), "w", encoding='utf-8') as f:
         json.dump(params, f, indent=4, ensure_ascii=False)
 
 def write_apis(apis):
@@ -185,7 +185,7 @@ def run_long_task(command: str):
     try:
         # 使用 nohup 来运行命令，确保在后台持续运行
         # 将输出重定向到日志文件
-        with open("task.log", "a") as log_file:
+        with open(os.path.join(cur_project_path, 'task.log'), "a") as log_file:
             process = subprocess.Popen(
                 f"nohup {command} &",
                 shell=True,
