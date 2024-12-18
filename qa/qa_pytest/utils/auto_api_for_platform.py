@@ -24,7 +24,7 @@ Base={
     "headers":{
     'Accept': 'application/json, text/plain, */*',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'X-Token': '161b91c7818c4699bb700c0e9551cd98'
+    'X-Token': ''
     }
 }
 
@@ -37,11 +37,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-django_host = 'http://localhost:3000'
+if os.getenv('DJANGO_HOST'):
+    django_host = os.getenv('DJANGO_HOST')
+else:
+    django_host = 'http://127.0.0.1:8000'
 
 def getapilist(path,method):
-    url = django_host + "/api/savedapi/saved-apis/"
+    url = django_host + "/savedapi/saved-apis/"
     response = requests.request("GET", url, headers=Base["headers"], data={})
     data = json.loads(response.text)
     for _, apis in data.items():
@@ -52,7 +54,7 @@ def getapilist(path,method):
     return {}
 
 def getenvironment():
-    url = django_host + "/api/environment/environments"
+    url = django_host + "/environment/environments"
     response = requests.request("GET", url, headers=Base["headers"], data={})
     print(response.status_code)
     data = json.loads(response.text)
@@ -95,7 +97,7 @@ async def save_info(con: RequestApiContent):
 
 def write_env(environment):
     # 写环境变量到文件中
-    filepath = "testdata/api_params.json"
+    filepath = os.path.join(cur_project_path, "testdata/api_params.json")
     if not os.path.exists(filepath):
         raise FileNotFoundError("文件: {} 未找到".format(filepath))
     with open(filepath, "r", encoding="utf-8") as f:
@@ -139,7 +141,7 @@ def write_testcase(type="",code=''):
             f.write(code)
 
 def write_params_json(params):
-    with open('variables/params.json', "w", encoding='utf-8') as f:
+    with open(os.path.join(cur_project_path, 'variables/params.json'), "w", encoding='utf-8') as f:
         json.dump(params, f, indent=4, ensure_ascii=False)
 
 def write_apis(apis):
@@ -239,7 +241,7 @@ async def run_api(con: RunInfo):
             groupname = "null"
 
         random_suffix = time.strftime('%Y_%m_%d_%H_%M_%S')
-        command = f'python3 utils/run_case.py --run --time {str(random_suffix)} --groupname {groupname} --api {api_mark}'
+        command = f'python utils/run_case.py --run --time {str(random_suffix)} --groupname {groupname} --api {api_mark}'
         # 启动后台进程
         print(command)
         pid = start_background_process(command, process_name)

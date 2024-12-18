@@ -23,8 +23,10 @@ class AuthenticationMiddleware(MiddlewareMixin):
     Authentication validation
     """
     def process_request(self, request):
-        if request.path in settings.AUTHENTICATION_EXCLUDES:
-            return None
+        for x in settings.AUTHENTICATION_EXCLUDES:
+            if request.path in x:
+                print(request.path + " 在排除列表中")
+                return None
         if any(x.match(request.path) for x in settings.AUTHENTICATION_EXCLUDES if hasattr(x, 'match')):
             return None
         access_token = request.headers.get('x-token') or request.GET.get('x-token')

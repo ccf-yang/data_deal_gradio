@@ -11,12 +11,15 @@ headers = {
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'Content-Type': 'application/json',
-    'X-Token': '161b91c7818c4699bb700c0e9551cd98'
+    'X-Token': ''
     }
-django_host = 'http://192.168.71.145:3000'
+if os.getenv('DJANGO_HOST'):
+    django_host = os.getenv('DJANGO_HOST')
+else:
+    django_host = 'http://127.0.0.1:8000'
 
 def update_apireporturl(report_url,api_mark):
-    url = f"{django_host}/api/autoapi/updateapicode"
+    url = f"{django_host}/autoapi/updateapicode"
     method = api_mark.split("_")[0]
     path = api_mark.split("_")[1]
     directory = api_mark.split("_")[2]
@@ -34,7 +37,7 @@ def update_apireporturl(report_url,api_mark):
 
 
 def update_groupurl(report_url,groupname):
-    url = f"{django_host}/api/autoapi/updategroup"
+    url = f"{django_host}/autoapi/updategroup"
     payload = json.dumps({
         "name": groupname,
         "url": report_url

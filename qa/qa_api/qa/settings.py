@@ -171,10 +171,10 @@ USE_TZ = False
 # 认证排除路径
 AUTHENTICATION_EXCLUDES = (
     '/account/login/',  # 登录页面
-    '/savedapi/saved-apis/', #保存的apis
-    '/environment/environments', #环境
-    '/autoapi/updategroup', #更新组
-    '/autoapi/updateapicode', #更新api
+    '/api/savedapi/saved-apis/', #保存的apis
+    '/api/environment/environments', #环境
+    '/api/autoapi/updategroup', #更新组
+    '/api/autoapi/updateapicode', #更新api
 )
 
 # 版本信息

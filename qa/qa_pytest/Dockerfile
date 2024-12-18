@@ -14,6 +14,7 @@ RUN rm -rf /etc/apt/sources.list.d/* && \
 # 配置pip源
 RUN pip config set global.index-url https://pypi.doubanio.com/simple/
 
+ENV DJANGO_HOST=http://192.168.71.145:8000
 
 # Set the working directory
 WORKDIR /app
