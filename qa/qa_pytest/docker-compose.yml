@@ -1,0 +1,27 @@
+version: '2.2'
+
+services:
+  api_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../data/dataresults:/app/results  # Mount host directory for results
+    ports:
+      - "4567:4567"
+    networks:
+      - api_network
+
+  nginx_service:
+    image: nginx:latest
+    container_name: nginx_container
+    ports:
+      - "8998:80"  # Expose port 8998 on the host
+    volumes:
+      - ../data/dataresults:/usr/share/nginx/html  # Use results as HTML directory
+    networks:
+      - api_network
+
+networks:
+  api_network:
+    driver: bridge

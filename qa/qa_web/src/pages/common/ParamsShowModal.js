@@ -7,6 +7,10 @@ const ParamsShowModal = ({ visible, onCancel, currentApi, testCasesCode, onSucce
   const [editingKey, setEditingKey] = useState('');
   const [form] = Form.useForm();
   const [dataSource, setDataSource] = useState([]);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth * 0.85,
+    height: window.innerHeight * 0.7
+  });
 
   useEffect(() => {
     setEditableCode(testCasesCode);
@@ -16,6 +20,19 @@ const ParamsShowModal = ({ visible, onCancel, currentApi, testCasesCode, onSucce
     const { columns, dataSource } = formatDataForTable(editableCode);
     setDataSource(dataSource);
   }, [editableCode]);
+
+  // 添加窗口尺寸变化的监听
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth * 0.85,
+        height: window.innerHeight * 0.7
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOk = async () => {
     try {
@@ -312,8 +329,15 @@ const ParamsShowModal = ({ visible, onCancel, currentApi, testCasesCode, onSucce
       open={visible}     
       onOk={handleOk}
       onCancel={onCancel}
-      width={1000}
-      style={{ top: 20 }}
+      width={windowSize.width}
+      style={{ 
+        top: 20,
+        height: windowSize.height
+      }}
+      bodyStyle={{
+        height: windowSize.height - 110, // 减去标题和按钮区域的高度
+        overflow: 'auto'
+      }}
       destroyOnClose
       forceRender
     >
@@ -325,7 +349,7 @@ const ParamsShowModal = ({ visible, onCancel, currentApi, testCasesCode, onSucce
         }}
         columns={finalColumns}
         dataSource={dataSource}
-        scroll={{ x: 'max-content', y: 400 }}
+        scroll={{ x: 'max-content', y: 'max-content' }}
         pagination={false}
         bordered
       />

@@ -17,6 +17,8 @@ import {
   updateGroup
 } from '../../../api/groupApiService';
 import { getEnvironments } from '../../../api/environmentService';
+import axios from 'axios';
+import { API_RUN_URL } from '../../../config';
 
 const { Option } = Select;
 
@@ -112,16 +114,21 @@ const GroupManager = () => {
     console.log('data:', data);
     // 调用run接口，拼接代码执行，如果有报错，就返回error，没有报错，就返回OK
     // run根据groupname将结果发送到group.url
-    const response = 'https://www.baidu.com'; //mock请求
 
     // run端执行完成后到逻辑
-    await updateGroup(data.groupname, response);
-    const res = await getGroups();
-    for (const group of res) {
-      if (group.name === record.groupName) {
-        console.log(group);
-        break;
-      }
+    const response_run = await axios({
+      method: 'post',
+      url: API_RUN_URL + '/run',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      data: data
+    });
+
+    if (response_run.code === 200) {
+      message.success('Run success');
+    } else {
+      message.error('Run failed, try again');
     }
   };
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p ../data/mysql ../data/redis
+mkdir -p ../data/mysql ../data/redis ../data/dataresults
 
 docker-compose up -d --build
 

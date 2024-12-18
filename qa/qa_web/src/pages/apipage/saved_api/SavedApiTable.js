@@ -19,6 +19,8 @@ import {
   updateApiCode
 } from '../../../api/groupApiService';
 import { removeApis } from '../../../api/savedApiService';
+import axios from 'axios';
+import { API_RUN_URL } from '../../../config';
 
 const SavedApiTable = ({ 
   apis,
@@ -58,49 +60,38 @@ const SavedApiTable = ({
       // record就是一个接口的情况[{method, path, directory...}],这样传过去，兼容group
       // 把接口传给生成代码接口，获取bussinesscode 等，然后填充到下面去
       // 把最终代码返回，格式为 {bussiness_code：, common_code：, testcases_code：,body_params：}, body_params实际代表参数的json
-      const mock_req_data = {
-        bussiness_code: 'bussiness test',
-        common_code: 'common test',
-        testcases_code: 'testcases test 2',
-        body_params: {
-          "get_/api/register": {
-            "all_value_correct": [
-              {"apiname":"name","type":"string","value":"test"},
-              {"apiname":"email","type":"string","value":"test@qq.com"},
-              {"apiname":"password","type":"string","value":"123456"}
-            ],
-            "name_error": [
-              {"apiname":"name","type":"string","value":12},
-              {"apiname":"email","type":"string","value":"test@qq.com"},
-              {"apiname":"password","type":"string","value":"123456"}
-            ],
-            "email_error": [
-              {"apiname":"name","type":"string","value":"test"},
-              {"apiname":"email","type":"string","value":213},
-              {"apiname":"password","type":"string","value":"123456"}
-            ],
-            "password_error": [
-              {"apiname":"name","type":"string","value":"test"},
-              {"apiname":"email","type":"string","value":"test@qq.com"},
-              {"apiname":"password","type":"string","value":123456}
-            ]
-          }
-        }
+      const requestData = {
+        path: record.path,
+        method: record.method.toLowerCase() // 确保方法名是小写的
       };
+  
+      // 使用 async/await 处理异步请求
+      const response = await axios({
+        method: 'post',
+        url: API_RUN_URL + '/ge_api_code',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        data: requestData
+      });
+  
+      const apiCodeData = response;
+      console.log('apiCodeData:', apiCodeData);
+
       
       await addApiCodeWithoutGroup({
         api_method: record.method,
         api_path: record.path,
         directory: record.directory,
-        bussiness_code: mock_req_data.bussiness_code || '',
-        common_code: mock_req_data.common_code || '',
-        testcases_code: mock_req_data.testcases_code || '',
+        bussiness_code: apiCodeData.business_code || '',
+        common_code: apiCodeData.common_code || '',
+        testcases_code: apiCodeData.testcase_code || '',
         is_auto_test: record.is_auto_test || false,
         report_url: record.report_url || '',
         header_params: record.header_params || '',
         path_params: record.path_params || '',
         query_params: record.query_params || '',
-        body_params: JSON.stringify(mock_req_data.body_params) || '',
+        body_params: JSON.stringify(apiCodeData.body_params) || '',
         response_params: record.response_params || ''
       });
       message.success('Case added successfully');
@@ -161,29 +152,31 @@ const SavedApiTable = ({
         api_path: record.path,
         directory: record.directory
       });
-      const data = {
-        groupname: '',
-        apis: [response],
-        environment: selectedEnvironment
-      };
-      console.log('data:', data);
       // 在接口里面读取json和代码，这里只进行拼装代码就好了。
       // 将{groupname:'', apis:[response],“environment”:selectedEnvironment} 传给run接口，无报错，就返回OK
       // run接口接收api列表，然后先生成头，循环生成每个case，如果case有内容为空，testcases生成处理为skip
       // 然后异步调用命令执行，执行完成后，判断group是否空，是的话，将url地址写到report_url字段
-      const response2 = 'https://www.baidu.com'; //mock请求
-
-      // run端执行完成后的逻辑
-      const reqdata = {
-        api_method: record.method,
-        api_path: record.path,
-        directory: record.directory,
-        report_url: response2
+  
+      // 使用 async/await 处理异步请求
+      const requestData = {
+        groupname: '',
+        apis: [response],
+        environment: selectedEnvironment
       };
-      await updateApiCode(reqdata);
-      message.success('Run success');
-      if (onReload) {
-        onReload();
+      console.log('requestData:', requestData);
+      const response_run = await axios({
+        method: 'post',
+        url: API_RUN_URL + '/run',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        data: requestData
+      });
+  
+      if (response_run.code === 200) {
+        message.success('Run success');
+      } else {
+        message.error('Run failed, try again');
       }
     } catch (error) {
       console.error('Failed to fetch API params:', error);

@@ -1,0 +1,6 @@
+{
+    "host": "http://localhost:3000",
+    "authorization": "st",
+    "suite_name": "test",
+    "mark_name": "atest"
+}

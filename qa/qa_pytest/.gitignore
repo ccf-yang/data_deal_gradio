@@ -1,0 +1,94 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+.pytest_cache/
+#etc/
+venv*/
+build/
+report/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+log
+testdata/run_case.txt
+testdata/paigod/mini_app_download_file
+testdata/paigod/*.jpeg
+testdata/not_contain_tag.txt
+testcases/test_bigdata_cases/test_device
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+NoseTest.xlsx
+coverage.xml
+runEnv.txt
+startTime.txt
+test.html
+*,cover
+
+# Robot Framework / coverage reports
+log.html
+output.xml
+report.html
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Sphinx documentation
+common_template/docs/_build/
+
+# PyBuilder
+target/
+*.prefs
+../.idea/
+.idea
+
+# Eclipse project files
+.classpath
+.project
+.pydevproject
+.settings
+Pipfile.lock
+
+# mac system trash directory
+.DS_Store
+
+# ignore extra file
+/testcases/test_paas_cases/test_stream_cases/tttest.py
+/testcases/test_paas_cases/test_down_cases/ttest.py
+/testdata/bigdata/v5/test_device_*.xlsx

@@ -11,8 +11,9 @@ export const ASSIGNERS = [
   { id: 2, name: '竹清' },
   { id: 3, name: '汤姆' },
   { id: 4, name: '可莉' },
-  { id: 5, name: '小明' },
-  { id: 6, name: '露羽' }
+  { id: 5, name: '周公瑾' },
+  { id: 6, name: '露羽' },
+  { id: 7, name: '林修崖' }
 ];
 
 // Status configuration
@@ -21,3 +22,5 @@ export const TASK_STATUSES = {
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed'
 };
+
+export const API_RUN_URL = 'http://127.0.0.1:4567';
