@@ -5,7 +5,7 @@ if [ "$operate" == "start" ]; then
     # up api and web
     mkdir -p ../data/mysql ../data/redis ../data/dataresults
     # -p 指定项目名称, 指定项目名称后, 停止和删除时需要使用 -p 指定项目名称,<项目名称>_<服务名称>_<序号>
-    docker-compose up -d --build -p qa_platform
+    docker-compose -p qa_platform up -d --build 
     #up pytest
     cd ../qa_pytest
     # 检查基础镜像是否存在
@@ -14,19 +14,19 @@ if [ "$operate" == "start" ]; then
         docker build -t qa-pytest-base:latest -f Dockerfile.base .
     fi
     # 构建主镜像
-    docker-compose up -d --build -p qa_pytest
+    docker-compose -p qa_pytest up -d --build 
 elif [ "$operate" == "stop" ]; then
     # down api and web
-    docker-compose down -p qa_platform
+    docker-compose -p qa_platform down
     # down pytest
     cd ../qa_pytest
-    docker-compose down -p qa_pytest
+    docker-compose -p qa_pytest down
 elif [ "$operate" == "restart" ]; then
     # restart api and web
-    docker-compose restart -p qa_platform
+    docker-compose -p qa_platform restart
     # restart pytest
     cd ../qa_pytest
-    docker-compose restart -p qa_pytest
+    docker-compose -p qa_pytest restart
 else
     echo "Usage: $0 start|stop|restart"
 fi
