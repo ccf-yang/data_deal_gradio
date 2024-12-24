@@ -268,52 +268,7 @@ async def run_api(con: RunInfo):
             "error": str(e),
             "code": 500
         }
-# @app.post("/run")
-# async def run_api(con: RunInfo):
-#     try:
-#         environment = con.environment
-#         apis = con.apis
-#         groupname = con.groupname
-#         # 异步执行代码，成功运行就返回
-#         process_name = "my_pytest_task"
-#         # 检查是否已有相同任务在运行
-#         if process_name in running_processes:
-#             try:
-#                 process = running_processes[process_name]
-#                 if process.is_running():
-#                     return {"message": "Task is already running", "pid": process.pid}
-#             except psutil.NoSuchProcess:
-#                 del running_processes[process_name]
 
-#         # 写环境变量到文件中
-#         write_env(environment)
-#         # 写apis代码到测试代码中
-#         api_mark = write_apis(apis)
-#         if groupname:
-#             groupname = groupname
-#         else:
-#             groupname = "null"
-
-#         random_suffix = time.strftime('%Y_%m_%d_%H_%M_%S')
-#         command = f'python utils/run_case.py --run --time {str(random_suffix)} --groupname {groupname} --api {api_mark}'
-#         # 启动后台进程
-#         print(command)
-#         pid = start_background_process(command, process_name)
-#         if pid:
-#             return {
-#                 "message": "Task started successfully",
-#                 "pid": pid,
-#                 "code": 200
-#             }
-#         else:
-#             raise HTTPException(status_code=500, detail="Failed to start task")
-
-#     except Exception as e:
-#         print(f"Error running task: {e}")
-#         return {
-#             "message": "Failed to start task",
-#             "error": str(e)
-#         }
 
 if __name__ == "__main__":
     uvicorn.run("auto_api_for_platform:app", host="0.0.0.0", port=4567)

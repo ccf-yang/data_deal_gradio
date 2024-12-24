@@ -380,6 +380,10 @@ def get_instruct(apiinfo={}):
 def get_funcname(apiinfo={}):
     funcname = ''
     for k, _ in apiinfo.items():
+        if "{" in k :
+            k = k.replace("{", "")
+        if "}" in k:
+            k = k.replace("}", "")
         funcname = k
     return funcname
 
