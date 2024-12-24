@@ -39,11 +39,6 @@ def generate_business_code(rawapiinfo, printstatus=True):
     if row_data[4]:
         havebodyparams = True
 
-    # 获取第6列，获取该接口名字
-    if row_data[5]:
-        funcname = row_data[5]
-        if '-' in funcname:
-            funcname = funcname.replace('-', '_')
 
     # 获取第7列，获取该接口说明
     if row_data[6]:
@@ -103,9 +98,10 @@ def generate_business_code(rawapiinfo, printstatus=True):
 
 # 生成common部分代码，f.writestatus为true会输出common后的代码
 def generate_common_function_code(rawapiinfo, printstatus=True):
-    funcname, apiinfo = '', ''
-    for k, v in rawapiinfo.items():
-        funcname, apiinfo = k, v
+    funcname = get_funcname(rawapiinfo)
+    apiinfo = ''
+    for _, v in rawapiinfo.items():
+        apiinfo = v
     businessfunc_name = "api_iaas_" + funcname
     row_data = apiinfo.split("++")
     path_params, query_params, body_params = [], [], []
@@ -143,7 +139,7 @@ def generate_common_function_code(rawapiinfo, printstatus=True):
         if query_params or body_params:
             func_str = f'def func_{businessfunc_name}(self,%s,http_code=HTTP_STATUS_CODE_200,**kwargs):' % ", ".join(path_params)
         else:
-            func_str = f'def func_{businessfunc_name}(self,%s,http_code=HTTP_STATUS_CODE_200):'  % ", ".join(total_params) 
+            func_str = f'def func_{businessfunc_name}(self,%s http_code=HTTP_STATUS_CODE_200):'  % total_params
     else:
         if query_params or body_params:
             func_str = f'def func_{businessfunc_name}(self,http_code=HTTP_STATUS_CODE_200,**kwargs):'
