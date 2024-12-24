@@ -66,18 +66,18 @@ class Test_Testcases_ClassName(object):
 		pass
 	def check_resp_params(self, expert_keys, actual_resp):
 		a = len(expert_keys)
-		b = len(actual_resp.keys())
+		b = len(actual_resp)
 		if a > b:
-			return 'sad,期望返回的参数比实际返回的参数多了{}个参数,分别是{}'.format(a - b,expert_keys - actual_resp.keys())
+			return 'sad,期望返回的参数比实际返回的参数多了{}个参数,分别是{}'.format(a - b,expert_keys - actual_resp)
 		if b > a:
-			return 'sad,期望返回的参数比实际返回的参数少了了{}个参数,分别是{}'.format(b - a,actual_resp.keys() - expert_keys)
-		if isinstance(actual_resp, dict):
-			for k in actual_resp.keys():
+			return 'sad,期望返回的参数比实际返回的参数少了了{}个参数,分别是{}'.format(b - a,actual_resp - expert_keys)
+		if isinstance(actual_resp, list):
+			for k in actual_resp:
 				if k in expert_keys:
 					expert_keys.remove(k)
 			return expert_keys
 		else:
-			return 'sad,期望返回的参数类型不是dict,实际返回的参数类型是{}'.format(type(actual_resp))
+			return 'sad,期望返回的参数类型不是list,实际返回的参数类型是{}'.format(type(actual_resp))
 '''
 
 def rm_exist_file():
